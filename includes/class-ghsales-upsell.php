@@ -1089,8 +1089,8 @@ class GHSales_Upsell {
 					echo '<span class="gulcan-product-sale">' . __( 'Sale', 'ghsales' ) . '</span>';
 				}
 				?>
-				<!-- Quick Add to Cart Button -->
-				<button class="gulcan-quick-add-cart ghsales-ajax-add-to-cart"
+				<!-- Quick Add to Cart Button (gulcan-plugins AJAX handler) -->
+				<button class="gulcan-quick-add-cart"
 						data-product-id="<?php echo esc_attr( $product_data['id'] ); ?>"
 						data-product-url="<?php echo esc_url( $product_data['add_to_cart_url'] ); ?>"
 						title="<?php esc_attr_e( 'Quick Add to Cart', 'ghsales' ); ?>">
