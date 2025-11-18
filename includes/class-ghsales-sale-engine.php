@@ -594,7 +594,7 @@ class GHSales_Sale_Engine {
 
 			// Add BOGO badge AND quantity data attribute for JavaScript
 			$name .= sprintf(
-				' <span class="ghsales-bogo-badge" data-free-per-paid="%d" data-paid-qty="%d" data-total-qty="%d" style="display: inline-block; background: #000; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 0; margin-top: 4px;">%s</span>',
+				' <span class="ghsales-bogo-badge" data-free-per-paid="%d" data-paid-qty="%d" data-total-qty="%d" style="display: inline-block; background: #000; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-top: 4px;">%s</span>',
 				$free_per_paid,
 				$quantity,
 				$total_received,
