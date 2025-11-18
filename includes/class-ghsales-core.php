@@ -343,6 +343,12 @@ class GHSales_Core {
 
 			<h2><?php esc_html_e( 'Database Status', 'ghsales' ); ?></h2>
 			<?php $this->render_database_status(); ?>
+
+			<h2><?php esc_html_e( 'Saved Color Schemes', 'ghsales' ); ?></h2>
+			<?php $this->render_color_schemes(); ?>
+
+			<h2><?php esc_html_e( 'WordPress Options Backup', 'ghsales' ); ?></h2>
+			<?php $this->render_options_backup(); ?>
 		</div>
 		<?php
 	}
@@ -452,6 +458,116 @@ class GHSales_Core {
 	public function ajax_save_consent() {
 		// Will be implemented in GDPR class (future phase)
 		wp_send_json_error( array( 'message' => 'Not implemented yet' ) );
+	}
+
+	/**
+	 * Render saved color schemes from database
+	 * Shows what colors were detected and saved
+	 *
+	 * @return void
+	 */
+	private function render_color_schemes() {
+		global $wpdb;
+
+		$schemes = $wpdb->get_results(
+			"SELECT * FROM {$wpdb->prefix}ghsales_color_schemes ORDER BY created_at DESC"
+		);
+
+		if ( empty( $schemes ) ) {
+			echo '<p>' . esc_html__( 'No color schemes found in database.', 'ghsales' ) . '</p>';
+			return;
+		}
+
+		echo '<table class="widefat striped">';
+		echo '<thead><tr>';
+		echo '<th>' . esc_html__( 'Scheme Name', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Primary', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Secondary', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Accent', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Text', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Background', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Active', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Created', 'ghsales' ) . '</th>';
+		echo '</tr></thead><tbody>';
+
+		foreach ( $schemes as $scheme ) {
+			echo '<tr>';
+			echo '<td><strong>' . esc_html( $scheme->scheme_name ) . '</strong></td>';
+
+			// Show color swatches
+			$colors = array(
+				'primary_color'     => $scheme->primary_color,
+				'secondary_color'   => $scheme->secondary_color,
+				'accent_color'      => $scheme->accent_color,
+				'text_color'        => $scheme->text_color,
+				'background_color'  => $scheme->background_color,
+			);
+
+			foreach ( $colors as $color ) {
+				echo '<td>';
+				echo '<div style="display: flex; align-items: center; gap: 8px;">';
+				echo '<div style="width: 30px; height: 30px; background-color: ' . esc_attr( $color ) . '; border: 1px solid #ccc; border-radius: 3px;"></div>';
+				echo '<code>' . esc_html( $color ) . '</code>';
+				echo '</div>';
+				echo '</td>';
+			}
+
+			echo '<td>' . ( $scheme->is_active ? '<span style="color: green;">✓ Active</span>' : '-' ) . '</td>';
+			echo '<td>' . esc_html( $scheme->created_at ) . '</td>';
+			echo '</tr>';
+		}
+
+		echo '</tbody></table>';
+	}
+
+	/**
+	 * Render WordPress options backup
+	 * Shows what was saved in wp_options for restoration
+	 *
+	 * @return void
+	 */
+	private function render_options_backup() {
+		$original_colors = get_option( 'ghsales_original_colors', array() );
+
+		if ( empty( $original_colors ) ) {
+			echo '<div class="notice notice-warning inline">';
+			echo '<p>' . esc_html__( 'No color backup found in WordPress options. This might mean Elementor was not active during installation, or the backup failed.', 'ghsales' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+
+		echo '<div class="notice notice-success inline">';
+		echo '<p><strong>' . esc_html__( 'Original colors backed up successfully!', 'ghsales' ) . '</strong></p>';
+		echo '</div>';
+
+		echo '<table class="widefat striped">';
+		echo '<thead><tr>';
+		echo '<th>' . esc_html__( 'Color Name', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Hex Value', 'ghsales' ) . '</th>';
+		echo '<th>' . esc_html__( 'Preview', 'ghsales' ) . '</th>';
+		echo '</tr></thead><tbody>';
+
+		$color_labels = array(
+			'primary'    => __( 'Primary Color', 'ghsales' ),
+			'secondary'  => __( 'Secondary Color', 'ghsales' ),
+			'accent'     => __( 'Accent Color', 'ghsales' ),
+			'text'       => __( 'Text Color', 'ghsales' ),
+			'background' => __( 'Background Color', 'ghsales' ),
+		);
+
+		foreach ( $original_colors as $key => $color ) {
+			echo '<tr>';
+			echo '<td><strong>' . esc_html( $color_labels[ $key ] ?? $key ) . '</strong></td>';
+			echo '<td><code>' . esc_html( $color ) . '</code></td>';
+			echo '<td><div style="width: 50px; height: 50px; background-color: ' . esc_attr( $color ) . '; border: 2px solid #333; border-radius: 5px;"></div></td>';
+			echo '</tr>';
+		}
+
+		echo '</tbody></table>';
+
+		echo '<p style="margin-top: 15px;">';
+		echo '<em>' . esc_html__( 'These colors will be automatically restored when color schemes are deactivated or the plugin is uninstalled.', 'ghsales' ) . '</em>';
+		echo '</p>';
 	}
 
 	/**
