@@ -495,8 +495,8 @@ class GHSales_Core {
 		// Frontend CSS (will create in future phase)
 		// wp_enqueue_style( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/css/ghsales-frontend.css', array(), GHSALES_VERSION );
 
-		// Frontend JS (will create in future phase)
-		// wp_enqueue_script( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/js/ghsales-frontend.js', array( 'jquery' ), GHSALES_VERSION, true );
+		// Frontend JS for BOGO quantity display in mini cart
+		wp_enqueue_script( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/js/ghsales-frontend.js', array( 'jquery' ), GHSALES_VERSION, true );
 	}
 
 	/**

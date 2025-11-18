@@ -480,10 +480,15 @@ class GHSales_Sale_Engine {
 		if ( isset( $cart_item['ghsales_bogo_display'] ) ) {
 			$bogo = $cart_item['ghsales_bogo_display'];
 			$free_per_paid = $bogo['free_per_paid'];
+			$quantity = $cart_item['quantity'];
+			$total_received = $bogo['total_items'];
 
-			// Add BOGO badge after product name
+			// Add BOGO badge AND quantity data attribute for JavaScript
 			$name .= sprintf(
-				' <span class="ghsales-bogo-badge" style="background: #46b450; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 8px;">1+%d FREE</span>',
+				' <span class="ghsales-bogo-badge" data-free-per-paid="%d" data-paid-qty="%d" data-total-qty="%d" style="background: #46b450; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 8px;">1+%d FREE</span>',
+				$free_per_paid,
+				$quantity,
+				$total_received,
 				$free_per_paid
 			);
 		}
