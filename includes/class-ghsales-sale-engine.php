@@ -175,8 +175,11 @@ class GHSales_Sale_Engine {
 				$allow_stacking = isset( $bogo_data['allow_stacking'] ) ? $bogo_data['allow_stacking'] : false;
 				$apply_on_sale_price = isset( $bogo_data['apply_on_sale_price'] ) ? $bogo_data['apply_on_sale_price'] : false;
 
+				error_log( 'GHSales: is_on_sale=' . ( $is_on_sale ? 'YES' : 'NO' ) . ', apply_on_sale_price=' . ( $apply_on_sale_price ? 'YES' : 'NO' ) );
+
 				// Check if product is on WooCommerce sale and if we should skip it
 				if ( $is_on_sale && ! $apply_on_sale_price ) {
+					error_log( 'GHSales: Product is on WC sale but apply_on_sale_price is OFF - skipping BOGO' );
 					// Product is on sale, but event says don't apply to sale items
 					// Skip this BOGO and treat as normal item
 					unset( WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] );
@@ -389,6 +392,8 @@ class GHSales_Sale_Engine {
 				'free_per_paid' => intval( $bogo_rule['free_items'] ),
 				'event_name' => $bogo_rule['event_name'],
 				'max_quantity' => $bogo_rule['max_quantity'],
+				'allow_stacking' => ! empty( $bogo_rule['allow_stacking'] ),
+				'apply_on_sale_price' => ! empty( $bogo_rule['apply_on_sale_price'] ),
 			);
 
 			error_log( 'GHSales: Successfully set ghsales_bogo for cart item ' . $cart_item_key );
