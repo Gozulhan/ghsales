@@ -306,8 +306,10 @@ class GHSales_Core {
 			);
 		}
 
-		// Upsell styles
-		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array( 'gulcan-mobile-product-cards' ), GHSALES_VERSION );
+		// Upsell styles with cache busting
+		$upsells_css_path = GHSALES_PLUGIN_DIR . 'public/css/ghsales-upsells.css';
+		$upsells_css_version = file_exists( $upsells_css_path ) ? filemtime( $upsells_css_path ) : GHSALES_VERSION;
+		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array( 'gulcan-mobile-product-cards' ), $upsells_css_version );
 
 		// Enqueue Swiper JS (required for minicart upsells carousel)
 		wp_enqueue_script(
