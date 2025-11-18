@@ -105,34 +105,29 @@ class GHSales_Core {
 		// Check for Cookiebot
 		if ( class_exists( 'Cookiebot_WP' ) || is_plugin_active( 'cookiebot/cookiebot.php' ) ) {
 			$this->gdpr_plugin = 'cookiebot';
-			error_log( 'GHSales: Detected Cookiebot - will use for consent management' );
 			return;
 		}
 
 		// Check for CookieYes (GDPR Cookie Consent)
 		if ( class_exists( 'CookieYes' ) || is_plugin_active( 'cookie-law-info/cookie-law-info.php' ) ) {
 			$this->gdpr_plugin = 'cookieyes';
-			error_log( 'GHSales: Detected CookieYes - will use for consent management' );
 			return;
 		}
 
 		// Check for Complianz
 		if ( class_exists( 'COMPLIANZ' ) || is_plugin_active( 'complianz-gdpr/complianz-gdpr.php' ) ) {
 			$this->gdpr_plugin = 'complianz';
-			error_log( 'GHSales: Detected Complianz - will use for consent management' );
 			return;
 		}
 
 		// Check for GDPR Cookie Compliance
 		if ( is_plugin_active( 'gdpr-cookie-compliance/moove-gdpr.php' ) ) {
 			$this->gdpr_plugin = 'moove_gdpr';
-			error_log( 'GHSales: Detected Moove GDPR - will use for consent management' );
 			return;
 		}
 
 		// No GDPR plugin detected - we'll use our own consent banner
 		$this->gdpr_plugin = null;
-		error_log( 'GHSales: No GDPR plugin detected - will use built-in consent banner' );
 	}
 
 	/**
