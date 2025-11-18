@@ -209,6 +209,8 @@ class GHSales_Sale_Engine {
 					'has_additional_discount' => $final_price < $original_price,
 				);
 
+				error_log( 'GHSales: Set BOGO display data for cart item ' . $cart_item_key . ' - qty=' . $quantity . ', total=' . $total_items_received );
+
 				continue; // Skip normal discount checks for BOGO items
 			}
 
@@ -553,11 +555,17 @@ class GHSales_Sale_Engine {
 	 * @return string Modified name HTML
 	 */
 	public static function add_bogo_info_to_name( $name, $cart_item, $cart_item_key ) {
+		// Debug: Log if BOGO display data exists
+		error_log( 'GHSales add_bogo_info_to_name called for: ' . $name );
+		error_log( 'Has ghsales_bogo_display: ' . ( isset( $cart_item['ghsales_bogo_display'] ) ? 'YES' : 'NO' ) );
+
 		if ( isset( $cart_item['ghsales_bogo_display'] ) ) {
 			$bogo = $cart_item['ghsales_bogo_display'];
 			$free_per_paid = $bogo['free_per_paid'];
 			$quantity = $cart_item['quantity'];
 			$total_received = $bogo['total_items'];
+
+			error_log( 'GHSales: Adding BOGO badge - free_per_paid=' . $free_per_paid . ', qty=' . $quantity . ', total=' . $total_received );
 
 			// Add BOGO badge AND quantity data attribute for JavaScript
 			$name .= sprintf(
