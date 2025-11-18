@@ -50,6 +50,9 @@ class GHSales_Sale_Engine {
 		// Add BOGO info after quantity in cart
 		add_filter( 'woocommerce_cart_item_name', array( __CLASS__, 'add_bogo_info_to_name' ), 10, 3 );
 
+		// Add regular discount badge to cart item name
+		add_filter( 'woocommerce_cart_item_name', array( __CLASS__, 'add_discount_badge_to_name' ), 15, 3 );
+
 		// Show sale badges on product pages
 		add_filter( 'woocommerce_sale_flash', array( __CLASS__, 'custom_sale_badge' ), 10, 3 );
 
@@ -631,6 +634,60 @@ class GHSales_Sale_Engine {
 				$quantity,
 				$total_received,
 				esc_html( $badge_text )
+			);
+		}
+
+		return $name;
+	}
+
+	/**
+	 * Add discount badge to product name in cart for regular (non-BOGO) discounts
+	 *
+	 * @param string $name Product name HTML
+	 * @param array  $cart_item Cart item data
+	 * @param string $cart_item_key Cart item key
+	 * @return string Modified name HTML
+	 */
+	public static function add_discount_badge_to_name( $name, $cart_item, $cart_item_key ) {
+		// Only show badge for regular discounts (not BOGO)
+		if ( isset( $cart_item['ghsales_discount'] ) && ! isset( $cart_item['ghsales_bogo_display'] ) ) {
+			$discount = $cart_item['ghsales_discount'];
+			$original_price = $discount['original_price'];
+			$discounted_price = $discount['discounted_price'];
+			$event_name = $discount['event_name'];
+
+			// Get the event post to retrieve badge display setting
+			$events = self::get_active_events();
+			$badge_display = 'percentage'; // Default
+
+			foreach ( $events as $event ) {
+				if ( $event->post_title === $event_name ) {
+					$badge_display = get_post_meta( $event->ID, '_ghsales_badge_display', true );
+					if ( empty( $badge_display ) ) {
+						$badge_display = 'percentage';
+					}
+					break;
+				}
+			}
+
+			// Calculate savings
+			$amount_saved = $original_price - $discounted_price;
+			$percentage_saved = $original_price > 0 ? round( ( $amount_saved / $original_price ) * 100 ) : 0;
+
+			// Build badge text based on setting
+			$badge_text = '';
+			if ( $badge_display === 'percentage' ) {
+				$badge_text = '-' . $percentage_saved . '%';
+			} elseif ( $badge_display === 'amount' ) {
+				$badge_text = '-' . wc_price( $amount_saved );
+			} elseif ( $badge_display === 'both' ) {
+				$badge_text = '-' . $percentage_saved . '% / -' . wc_price( $amount_saved );
+			}
+
+			// Add discount badge
+			$name .= sprintf(
+				' <span class="ghsales-discount-badge" style="align-self: flex-start; background: #000; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">%s</span>',
+				$badge_text
 			);
 		}
 

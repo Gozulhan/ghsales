@@ -28,6 +28,9 @@ jQuery(document).ready(function($) {
             // Look for BOGO badge with data attributes in the title
             var $bogoBadge = $itemDetails.find('.ghsales-bogo-badge');
 
+            // Also look for regular discount badge
+            var $discountBadge = $itemDetails.find('.ghsales-discount-badge');
+
             if ($bogoBadge.length > 0) {
                 // Get data from badge attributes
                 var freePerPaid = parseInt($bogoBadge.data('free-per-paid')) || 1;
@@ -57,6 +60,10 @@ jQuery(document).ready(function($) {
                 var $movedBadge = $bogoBadge.detach();
                 // Insert after the quantity info div we just created
                 $bogoQtyDiv.after($movedBadge);
+            } else if ($discountBadge.length > 0) {
+                // For regular discounts (no BOGO), just move the badge below quantity controls
+                var $movedDiscountBadge = $discountBadge.detach();
+                $quantityDiv.before($movedDiscountBadge);
             }
         });
     }
@@ -72,7 +79,7 @@ jQuery(document).ready(function($) {
     // Also watch for quantity changes in mini cart
     $(document).on('click', '.qty-btn', function() {
         setTimeout(function() {
-            // Remove old BOGO quantity divs
+            // Remove old BOGO quantity divs and badges
             $('.ghsales-bogo-quantity').remove();
             // Re-add with updated quantities
             addBogoQuantityInfo();
@@ -83,7 +90,7 @@ jQuery(document).ready(function($) {
     $(document).on('ghminicart_drawer_updated', function() {
         console.log('GHSales: Drawer updated, re-adding BOGO info');
         setTimeout(function() {
-            // Remove old BOGO quantity divs
+            // Remove old BOGO quantity divs and badges
             $('.ghsales-bogo-quantity').remove();
             // Re-add with updated quantities
             addBogoQuantityInfo();

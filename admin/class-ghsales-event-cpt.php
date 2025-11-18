@@ -444,6 +444,12 @@ class GHSales_Event_CPT {
 		$allow_stacking    = get_post_meta( $post->ID, '_ghsales_allow_stacking', true );
 		$apply_on_sale     = get_post_meta( $post->ID, '_ghsales_apply_on_sale_price', true );
 		$color_scheme_id   = get_post_meta( $post->ID, '_ghsales_color_scheme_id', true );
+		$badge_display     = get_post_meta( $post->ID, '_ghsales_badge_display', true );
+
+		// Default to 'percentage' if not set
+		if ( empty( $badge_display ) ) {
+			$badge_display = 'percentage';
+		}
 
 		// Get color schemes
 		global $wpdb;
@@ -470,6 +476,22 @@ class GHSales_Event_CPT {
 					   <?php checked( $apply_on_sale, '1' ); ?>>
 				<?php esc_html_e( 'Apply on WooCommerce sale price', 'ghsales' ); ?>
 			</label>
+		</p>
+
+		<p>
+			<label for="ghsales_badge_display"><?php esc_html_e( 'Badge Display', 'ghsales' ); ?></label>
+			<select id="ghsales_badge_display" name="ghsales_badge_display" class="widefat">
+				<option value="percentage" <?php selected( $badge_display, 'percentage' ); ?>>
+					<?php esc_html_e( 'Percentage (e.g., -25%)', 'ghsales' ); ?>
+				</option>
+				<option value="amount" <?php selected( $badge_display, 'amount' ); ?>>
+					<?php esc_html_e( 'Amount Saved (e.g., -€10.00)', 'ghsales' ); ?>
+				</option>
+				<option value="both" <?php selected( $badge_display, 'both' ); ?>>
+					<?php esc_html_e( 'Both (e.g., -25% / -€10.00)', 'ghsales' ); ?>
+				</option>
+			</select>
+			<span class="description"><?php esc_html_e( 'Choose how to display discount on sale badges', 'ghsales' ); ?></span>
 		</p>
 
 		<p>
@@ -525,6 +547,13 @@ class GHSales_Event_CPT {
 		// Save settings
 		update_post_meta( $post_id, '_ghsales_allow_stacking', isset( $_POST['ghsales_allow_stacking'] ) ? '1' : '0' );
 		update_post_meta( $post_id, '_ghsales_apply_on_sale_price', isset( $_POST['ghsales_apply_on_sale_price'] ) ? '1' : '0' );
+
+		if ( isset( $_POST['ghsales_badge_display'] ) ) {
+			$badge_display = sanitize_text_field( $_POST['ghsales_badge_display'] );
+			if ( in_array( $badge_display, array( 'percentage', 'amount', 'both' ), true ) ) {
+				update_post_meta( $post_id, '_ghsales_badge_display', $badge_display );
+			}
+		}
 
 		if ( isset( $_POST['ghsales_color_scheme_id'] ) ) {
 			update_post_meta( $post_id, '_ghsales_color_scheme_id', absint( $_POST['ghsales_color_scheme_id'] ) );
