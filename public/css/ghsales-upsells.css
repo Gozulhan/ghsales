@@ -11,31 +11,33 @@
 /* ========================================
    MINICART DRAWER TITLE STYLING
    All h1-h6 in minicart drawer
+   Ultra-specific selectors to override Elementor theme
    ======================================== */
 
-div.ghminicart-drawer h1,
-div.ghminicart-drawer h2,
-div.ghminicart-drawer h3,
-div.ghminicart-drawer h4,
-div.ghminicart-drawer h5,
-div.ghminicart-drawer h6,
-.elementor div.ghminicart-drawer h1,
-.elementor div.ghminicart-drawer h2,
-.elementor div.ghminicart-drawer h3,
-.elementor div.ghminicart-drawer h4,
-.elementor div.ghminicart-drawer h5,
-.elementor div.ghminicart-drawer h6,
+body.elementor-kit-64 div.ghminicart-drawer h1,
+body.elementor-kit-64 div.ghminicart-drawer h2,
+body.elementor-kit-64 div.ghminicart-drawer h3,
+body.elementor-kit-64 div.ghminicart-drawer h4,
+body.elementor-kit-64 div.ghminicart-drawer h5,
+body.elementor-kit-64 div.ghminicart-drawer h6,
 body div.ghminicart-drawer h1,
 body div.ghminicart-drawer h2,
 body div.ghminicart-drawer h3,
 body div.ghminicart-drawer h4,
 body div.ghminicart-drawer h5,
-body div.ghminicart-drawer h6 {
+body div.ghminicart-drawer h6,
+.elementor div.ghminicart-drawer h1,
+.elementor div.ghminicart-drawer h2,
+.elementor div.ghminicart-drawer h3,
+.elementor div.ghminicart-drawer h4,
+.elementor div.ghminicart-drawer h5,
+.elementor div.ghminicart-drawer h6 {
 	line-height: 1 !important;
 	font-family: 'DM Sans', sans-serif !important;
 	font-size: 16px !important;
 	font-weight: bolder !important;
 	margin: 8px 0px !important;
+	letter-spacing: 0 !important;
 }
 
 /* ========================================
@@ -49,12 +51,18 @@ body div.ghminicart-drawer h6 {
 	margin: 0 0 1.5rem 0; /* Remove horizontal margin - parent handles it */
 }
 
+/* Special sales title - override Elementor */
+body.elementor-kit-64 .ghsales-special-sales-section h3.ghsales-special-sales-title,
+body .ghsales-special-sales-section h3.ghsales-special-sales-title,
+.elementor .ghsales-special-sales-section h3.ghsales-special-sales-title,
 .ghsales-special-sales-title {
 	font-size: 16px !important;
 	font-weight: 700 !important;
 	margin: 0 0 0.75rem 0 !important;
 	color: #0F1A2B !important;
 	font-family: 'DM Sans', sans-serif !important;
+	line-height: 1 !important;
+	letter-spacing: 0 !important;
 }
 
 .ghsales-special-sales-list {
@@ -103,13 +111,17 @@ body div.ghminicart-drawer h6 {
 }
 
 /* Title styling - 16px, bolder, Dutch catchy text */
+body.elementor-kit-64 .ghsales-cart-upsells-section h3.ghsales-upsells-title,
+body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
+.elementor .ghsales-cart-upsells-section h3.ghsales-upsells-title,
 .ghsales-upsells-title {
 	font-size: 16px !important;
 	font-weight: 700 !important;
 	margin: 0 0 1.25rem 0 !important; /* 1.25rem spacing below title */
 	color: #0F1A2B !important;
 	font-family: 'DM Sans', sans-serif !important;
-	line-height: 1.3 !important;
+	line-height: 1 !important;
+	letter-spacing: 0 !important;
 }
 
 /* Upsells carousel container */
