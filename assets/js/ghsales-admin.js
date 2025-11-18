@@ -136,36 +136,48 @@ jQuery(document).ready(function($) {
             var $input = $('.ghsales-discount-value-input[data-index="' + index + '"]');
             var $help = $('.ghsales-discount-value-help[data-index="' + index + '"]');
 
-            // Update label, placeholder, and help text based on rule type
+            // Update label, placeholder, help text, and input settings based on rule type
             switch(ruleType) {
                 case 'percentage':
                     $label.text('Discount Percentage');
                     $input.attr('placeholder', 'e.g., 20 for 20% off');
+                    $input.attr('step', '0.01'); // Allow decimals like 12.5%
+                    $input.attr('max', '100');
                     $help.text('Enter the percentage discount (e.g., 20 for 20% off)');
                     break;
                 case 'fixed':
                     $label.text('Discount Amount');
                     $input.attr('placeholder', 'e.g., 10.00 for €10 off');
+                    $input.attr('step', '0.01'); // Allow decimals for currency
+                    $input.removeAttr('max');
                     $help.text('Enter the fixed amount discount (e.g., 10.00 for €10 off)');
                     break;
                 case 'bogo':
                     $label.text('Free Items Quantity');
                     $input.attr('placeholder', 'e.g., 1 for Buy 1 Get 1 Free');
+                    $input.attr('step', '1'); // Whole numbers only
+                    $input.removeAttr('max');
                     $help.text('Enter number of free items (e.g., 1 = Buy 1 Get 1 Free, 2 = Buy 1 Get 2 Free)');
                     break;
                 case 'buy_x_get_y':
                     $label.text('Free Items (Y)');
                     $input.attr('placeholder', 'e.g., 1 for Buy 2 Get 1 Free');
+                    $input.attr('step', '1'); // Whole numbers only
+                    $input.removeAttr('max');
                     $help.text('Enter number of free items to give (e.g., 1 = Buy 2 Get 1 Free)');
                     break;
                 case 'spend_threshold':
                     $label.text('Discount Value');
                     $input.attr('placeholder', 'e.g., 10 for 10% or €10 off');
+                    $input.attr('step', '0.01'); // Allow decimals
+                    $input.removeAttr('max');
                     $help.text('Enter discount percentage or fixed amount when spending above threshold');
                     break;
                 default:
                     $label.text('Discount Value');
                     $input.attr('placeholder', 'e.g., 10');
+                    $input.attr('step', '0.01');
+                    $input.removeAttr('max');
                     $help.text('');
             }
         });
