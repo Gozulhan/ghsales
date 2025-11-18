@@ -177,6 +177,26 @@ class GHSales_Sale_Engine {
 
 				error_log( 'GHSales: is_on_sale=' . ( $is_on_sale ? 'YES' : 'NO' ) . ', apply_on_sale_price=' . ( $apply_on_sale_price ? 'YES' : 'NO' ) );
 
+				// Check purchase limit if quantity changed in cart
+				if ( ! empty( $bogo_data['max_quantity'] ) ) {
+					$limit_check = self::check_purchase_limit(
+						$bogo_data['rule_id'],
+						$bogo_data['max_quantity'],
+						$quantity
+					);
+
+					// If limit exceeded, remove BOGO and show message
+					if ( ! $limit_check['allowed'] ) {
+						error_log( 'GHSales: Purchase limit reached (qty=' . $quantity . ', limit=' . $bogo_data['max_quantity'] . ') - removing BOGO' );
+						unset( WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] );
+						WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
+							'remaining' => $limit_check['remaining'],
+							'max_quantity' => $bogo_data['max_quantity'],
+						);
+						continue;
+					}
+				}
+
 				// Check if product is on WooCommerce sale and if we should skip it
 				if ( $is_on_sale && ! $apply_on_sale_price ) {
 					error_log( 'GHSales: Product is on WC sale but apply_on_sale_price is OFF - skipping BOGO' );
