@@ -9,6 +9,9 @@ jQuery(document).ready(function($) {
     // Sale Event Rule Management
     let ruleIndex = $('.ghsales-rule-row').length;
 
+    // Initialize Select2 for existing selectors
+    initializeSelect2();
+
     // Add new rule
     $('#ghsales-add-rule').on('click', function(e) {
         e.preventDefault();
@@ -22,6 +25,9 @@ jQuery(document).ready(function($) {
 
         // Append to container
         $('#ghsales-rules-container').append(template);
+
+        // Initialize Select2 for new selectors
+        initializeSelect2();
 
         ruleIndex++;
     });
@@ -39,5 +45,30 @@ jQuery(document).ready(function($) {
             });
         }
     });
+
+    // Handle "Applies To" dropdown change
+    $(document).on('change', '.ghsales-applies-to', function() {
+        var $this = $(this);
+        var index = $this.data('index');
+        var value = $this.val();
+        var $targetSelector = $('.ghsales-target-selector[data-index="' + index + '"]');
+
+        if (value === 'all') {
+            // Hide target selector for "All Products"
+            $targetSelector.hide();
+        } else {
+            // Show target selector
+            $targetSelector.show();
+        }
+    });
+
+    // Initialize Select2 dropdowns
+    function initializeSelect2() {
+        if ($.fn.select2) {
+            $('.ghsales-select2').select2({
+                width: '100%'
+            });
+        }
+    }
 
 });

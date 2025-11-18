@@ -464,8 +464,12 @@ class GHSales_Core {
 			return;
 		}
 
+		// Enqueue Select2 (comes with WordPress)
+		wp_enqueue_style( 'select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', array(), '4.1.0' );
+		wp_enqueue_script( 'select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', array( 'jquery' ), '4.1.0', true );
+
 		// Admin JS
-		wp_enqueue_script( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/js/ghsales-admin.js', array( 'jquery' ), GHSALES_VERSION, true );
+		wp_enqueue_script( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/js/ghsales-admin.js', array( 'jquery', 'select2' ), GHSALES_VERSION, true );
 	}
 
 	/**

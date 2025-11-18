@@ -299,7 +299,7 @@ class GHSales_Event_CPT {
 
 			<div class="ghsales-rule-field">
 				<label><?php esc_html_e( 'Applies To', 'ghsales' ); ?></label>
-				<select name="ghsales_rules[<?php echo esc_attr( $index ); ?>][applies_to]" class="widefat">
+				<select name="ghsales_rules[<?php echo esc_attr( $index ); ?>][applies_to]" class="widefat ghsales-applies-to" data-index="<?php echo esc_attr( $index ); ?>">
 					<option value="all" <?php selected( $applies_to, 'all' ); ?>><?php esc_html_e( 'All Products', 'ghsales' ); ?></option>
 					<option value="products" <?php selected( $applies_to, 'products' ); ?>><?php esc_html_e( 'Specific Products', 'ghsales' ); ?></option>
 					<option value="categories" <?php selected( $applies_to, 'categories' ); ?>><?php esc_html_e( 'Product Categories', 'ghsales' ); ?></option>
@@ -307,13 +307,9 @@ class GHSales_Event_CPT {
 				</select>
 			</div>
 
-			<div class="ghsales-rule-field">
-				<label><?php esc_html_e( 'Target IDs (comma-separated)', 'ghsales' ); ?></label>
-				<input type="text"
-					   name="ghsales_rules[<?php echo esc_attr( $index ); ?>][target_ids]"
-					   value="<?php echo esc_attr( $target_ids ); ?>"
-					   class="widefat"
-					   placeholder="<?php esc_attr_e( 'e.g., 123, 456, 789 (leave empty if applies to all)', 'ghsales' ); ?>">
+			<div class="ghsales-rule-field ghsales-target-selector" data-index="<?php echo esc_attr( $index ); ?>" style="<?php echo ( $applies_to === 'all' ) ? 'display:none;' : ''; ?>">
+				<label><?php esc_html_e( 'Select Target', 'ghsales' ); ?></label>
+				<?php self::render_target_selector( $applies_to, $target_ids, $index ); ?>
 			</div>
 
 			<div class="ghsales-rule-field">
@@ -338,6 +334,91 @@ class GHSales_Event_CPT {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render target selector (products, categories, or tags)
+	 *
+	 * @param string     $applies_to Type: products, categories, or tags
+	 * @param string     $target_ids Comma-separated IDs
+	 * @param int|string $index Rule index
+	 * @return void
+	 */
+	private static function render_target_selector( $applies_to, $target_ids, $index ) {
+		$selected_ids = ! empty( $target_ids ) ? array_map( 'trim', explode( ',', $target_ids ) ) : array();
+
+		if ( $applies_to === 'products' ) {
+			// Get all products
+			$products = wc_get_products( array(
+				'limit'  => -1,
+				'status' => 'publish',
+				'orderby' => 'title',
+				'order'   => 'ASC',
+			) );
+
+			?>
+			<select name="ghsales_rules[<?php echo esc_attr( $index ); ?>][target_ids][]"
+					class="ghsales-select2"
+					multiple="multiple"
+					style="width: 100%;"
+					data-placeholder="<?php esc_attr_e( 'Search and select products...', 'ghsales' ); ?>">
+				<?php foreach ( $products as $product ) : ?>
+					<option value="<?php echo esc_attr( $product->get_id() ); ?>"
+							<?php echo in_array( $product->get_id(), $selected_ids ) ? 'selected' : ''; ?>>
+						<?php echo esc_html( $product->get_name() . ' (#' . $product->get_id() . ')' ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+			<?php
+
+		} elseif ( $applies_to === 'categories' ) {
+			// Get all product categories
+			$categories = get_terms( array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			) );
+
+			?>
+			<select name="ghsales_rules[<?php echo esc_attr( $index ); ?>][target_ids][]"
+					class="ghsales-select2"
+					multiple="multiple"
+					style="width: 100%;"
+					data-placeholder="<?php esc_attr_e( 'Search and select categories...', 'ghsales' ); ?>">
+				<?php foreach ( $categories as $category ) : ?>
+					<option value="<?php echo esc_attr( $category->term_id ); ?>"
+							<?php echo in_array( $category->term_id, $selected_ids ) ? 'selected' : ''; ?>>
+						<?php echo esc_html( $category->name . ' (' . $category->count . ' products)' ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+			<?php
+
+		} elseif ( $applies_to === 'tags' ) {
+			// Get all product tags
+			$tags = get_terms( array(
+				'taxonomy'   => 'product_tag',
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			) );
+
+			?>
+			<select name="ghsales_rules[<?php echo esc_attr( $index ); ?>][target_ids][]"
+					class="ghsales-select2"
+					multiple="multiple"
+					style="width: 100%;"
+					data-placeholder="<?php esc_attr_e( 'Search and select tags...', 'ghsales' ); ?>">
+				<?php foreach ( $tags as $tag ) : ?>
+					<option value="<?php echo esc_attr( $tag->term_id ); ?>"
+							<?php echo in_array( $tag->term_id, $selected_ids ) ? 'selected' : ''; ?>>
+						<?php echo esc_html( $tag->name . ' (' . $tag->count . ' products)' ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+			<?php
+		}
 	}
 
 	/**
@@ -457,13 +538,23 @@ class GHSales_Event_CPT {
 		// Save new rules
 		if ( ! empty( $_POST['ghsales_rules'] ) && is_array( $_POST['ghsales_rules'] ) ) {
 			foreach ( $_POST['ghsales_rules'] as $rule_data ) {
+				// Handle target_ids (can be array from Select2 or string)
+				$target_ids = '';
+				if ( isset( $rule_data['target_ids'] ) ) {
+					if ( is_array( $rule_data['target_ids'] ) ) {
+						$target_ids = implode( ',', array_map( 'absint', $rule_data['target_ids'] ) );
+					} else {
+						$target_ids = sanitize_text_field( $rule_data['target_ids'] );
+					}
+				}
+
 				$wpdb->insert(
 					$table,
 					array(
 						'event_id'       => $event_id,
 						'rule_type'      => sanitize_text_field( $rule_data['rule_type'] ),
 						'applies_to'     => sanitize_text_field( $rule_data['applies_to'] ),
-						'target_ids'     => sanitize_text_field( $rule_data['target_ids'] ),
+						'target_ids'     => $target_ids,
 						'discount_value' => floatval( $rule_data['discount_value'] ),
 						'priority'       => absint( $rule_data['priority'] ),
 					),
