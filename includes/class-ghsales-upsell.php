@@ -691,10 +691,15 @@ class GHSales_Upsell {
 	 */
 	public static function render_cart_upsells() {
 		// First, show special sales (BOGO, discounts)
-		self::render_special_sales();
+		$special_sale_product_ids = self::render_special_sales();
 
 		// Then show upsell recommendations with Swiper
-		$recommendations = self::get_recommendations( 'cart', null, array( 'limit' => 4 ) );
+		// Exclude products that are already shown in special sales
+		$args = array(
+			'limit'       => 4,
+			'exclude_ids' => ! empty( $special_sale_product_ids ) ? $special_sale_product_ids : array(),
+		);
+		$recommendations = self::get_recommendations( 'cart', null, $args );
 
 		if ( empty( $recommendations ) ) {
 			return;
@@ -773,37 +778,150 @@ class GHSales_Upsell {
 
 	/**
 	 * Render special sales section (BOGO, discounts)
-	 * Shows active sale events at the top of minicart
+	 * Shows products with active sales at the top of minicart
 	 *
-	 * @return void
+	 * @return array Array of product IDs shown in special sales (for exclusion from upsells)
 	 */
 	private static function render_special_sales() {
 		// Check if GHSales Sale Engine is available
 		if ( ! class_exists( 'GHSales_Sale_Engine' ) ) {
-			return;
+			return array();
 		}
 
 		// Get active sale events
 		$active_events = GHSales_Sale_Engine::get_active_events();
 
 		if ( empty( $active_events ) ) {
-			return;
+			return array();
 		}
 
-		// Render special sales banner
+		// Get products for each sale event
+		$sale_products = array();
+		foreach ( $active_events as $event ) {
+			// Get products from this event's rules
+			if ( ! empty( $event->rules ) ) {
+				foreach ( $event->rules as $rule ) {
+					// Get product IDs from the rule
+					$product_ids = ! empty( $rule->product_ids ) ? explode( ',', $rule->product_ids ) : array();
+					$category_ids = ! empty( $rule->category_ids ) ? explode( ',', $rule->category_ids ) : array();
+
+					// Get products by IDs
+					if ( ! empty( $product_ids ) ) {
+						foreach ( $product_ids as $product_id ) {
+							$product = wc_get_product( (int) $product_id );
+							if ( $product && $product->is_in_stock() ) {
+								$sale_products[ $product_id ] = array(
+									'product'    => $product,
+									'event_name' => $event->post_title,
+								);
+							}
+						}
+					}
+
+					// Get products by categories
+					if ( ! empty( $category_ids ) ) {
+						$args = array(
+							'status'      => 'publish',
+							'category'    => $category_ids,
+							'limit'       => 4,
+							'stock_status' => 'instock',
+						);
+						$products = wc_get_products( $args );
+						foreach ( $products as $product ) {
+							$sale_products[ $product->get_id() ] = array(
+								'product'    => $product,
+								'event_name' => $event->post_title,
+							);
+						}
+					}
+				}
+			}
+		}
+
+		// If no products found, don't show the section
+		if ( empty( $sale_products ) ) {
+			return array();
+		}
+
+		// Limit to 4 products max
+		$sale_products = array_slice( $sale_products, 0, 4, true );
+
+		// Get product IDs for exclusion from upsells
+		$product_ids_shown = array_keys( $sale_products );
+
+		// Check if we have multiple sale events
+		$event_names = array_unique( array_column( $sale_products, 'event_name' ) );
+		$multiple_sales = count( $event_names ) > 1;
+
+		// Generate unique ID for carousel
+		static $carousel_counter = 0;
+		$carousel_counter++;
+		$widget_id = 'ghsales-special-sales-' . $carousel_counter;
+
+		// Format products for display
+		$products_data = array();
+		foreach ( $sale_products as $sale_product ) {
+			$products_data[] = self::format_product_for_display( $sale_product['product'] );
+		}
+
+		// Render special sales section
 		?>
-		<div class="ghsales-special-sales-section">
+		<div class="ghsales-special-sales-section <?php echo $multiple_sales ? 'multiple-sales' : ''; ?>">
 			<h3 class="ghsales-special-sales-title">Speciale Aanbiedingen</h3>
-			<div class="ghsales-special-sales-list">
-				<?php foreach ( $active_events as $event ) : ?>
-					<div class="ghsales-special-sale-item">
-						<h4><?php echo esc_html( $event->post_title ); ?></h4>
-						<!-- Additional event details can be added here -->
+
+			<?php if ( ! $multiple_sales && count( $event_names ) === 1 ) : ?>
+				<div class="ghsales-special-sale-event-title"><?php echo esc_html( $event_names[0] ); ?></div>
+			<?php endif; ?>
+
+			<div id="<?php echo esc_attr( $widget_id ); ?>" class="ghsales-special-sale-products gulcan-wc-products-carousel">
+				<div class="gulcan-products-swiper swiper">
+					<div class="swiper-wrapper">
+						<?php foreach ( $products_data as $product_data ) : ?>
+							<div class="swiper-slide">
+								<?php self::render_product_card( $product_data ); ?>
+							</div>
+						<?php endforeach; ?>
 					</div>
-				<?php endforeach; ?>
+
+					<!-- Progress bar pagination -->
+					<div class="swiper-pagination"></div>
+				</div>
 			</div>
+
+			<script>
+			// Initialize Swiper for special sales
+			document.addEventListener('DOMContentLoaded', function() {
+				if (typeof Swiper !== 'undefined') {
+					new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
+						slidesPerView: 2,
+						spaceBetween: 16,
+						centeredSlides: false,
+						slidesPerGroup: 1,
+						loop: false,
+						pagination: {
+							el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
+							type: 'progressbar',
+							clickable: false
+						},
+						breakpoints: {
+							768: {
+								slidesPerView: 3,
+								spaceBetween: 16
+							},
+							1024: {
+								slidesPerView: 2,
+								spaceBetween: 16
+							}
+						}
+					});
+				}
+			});
+			</script>
 		</div>
 		<?php
+
+		// Return product IDs for exclusion from upsells
+		return $product_ids_shown;
 	}
 
 	/**
