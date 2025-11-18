@@ -1,12 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git remote add:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(1+1 FREE\"\n- With stacking: \"€39.95 €35.96)",
-      "Bash(1+1 FREE + Sale\"\n\nThis gives maximum value to customers when stacking is enabled!\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(NUL)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

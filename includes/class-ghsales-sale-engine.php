@@ -176,7 +176,7 @@ class GHSales_Sale_Engine {
 				if ( $is_on_sale && ! $apply_on_sale_price ) {
 					// Product is on sale, but event says don't apply to sale items
 					// Skip this BOGO and treat as normal item
-					unset( $cart_item['ghsales_bogo'] );
+					unset( WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] );
 					continue;
 				}
 
@@ -199,8 +199,8 @@ class GHSales_Sale_Engine {
 					}
 				}
 
-				// Store BOGO info for display
-				$cart_item['ghsales_bogo_display'] = array(
+				// Store BOGO info for display - MUST update cart contents directly, not the loop copy
+				WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo_display'] = array(
 					'original_price' => $original_price,
 					'final_price' => $final_price,
 					'total_items' => $total_items_received,
@@ -220,8 +220,8 @@ class GHSales_Sale_Engine {
 				$new_price = self::calculate_discounted_price( $original_price, $discount );
 				$product->set_price( $new_price );
 
-				// Store discount info in cart item for display
-				$cart_item['ghsales_discount'] = array(
+				// Store discount info in cart item for display - MUST update cart contents directly
+				WC()->cart->cart_contents[ $cart_item_key ]['ghsales_discount'] = array(
 					'original_price' => $original_price,
 					'discounted_price' => $new_price,
 					'discount_type' => $discount['type'],
