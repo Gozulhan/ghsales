@@ -283,8 +283,8 @@ class GHSales_Core {
 		);
 
 		// Enqueue gulcan-plugins product card styles (for minicart upsells)
-		$gulcan_plugins_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/public/assets/css/woocommerce-products-style.css';
-		$gulcan_plugins_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/public/assets/css/woocommerce-products-style.css' );
+		$gulcan_plugins_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/assets/css/woocommerce-products-style.css';
+		$gulcan_plugins_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/assets/css/woocommerce-products-style.css' );
 		if ( file_exists( $gulcan_plugins_path ) ) {
 			wp_enqueue_style(
 				'gulcan-wc-products-public',
@@ -328,8 +328,8 @@ class GHSales_Core {
 		);
 
 		// Enqueue gulcan-plugins product scripts (for AJAX add to cart)
-		$gulcan_scripts_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/public/assets/js/woocommerce-products-script.js';
-		$gulcan_scripts_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/public/assets/js/woocommerce-products-script.js' );
+		$gulcan_scripts_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/assets/js/woocommerce-products-script.js';
+		$gulcan_scripts_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/assets/js/woocommerce-products-script.js' );
 		if ( file_exists( $gulcan_scripts_path ) ) {
 			wp_enqueue_script(
 				'gulcan-wc-products-public',
