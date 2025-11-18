@@ -5,7 +5,10 @@
       "Bash(findstr:*)",
       "Bash(cat:*)",
       "Bash(dir:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

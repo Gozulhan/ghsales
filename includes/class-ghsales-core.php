@@ -274,11 +274,85 @@ class GHSales_Core {
 	 * @return void
 	 */
 	public function enqueue_frontend_assets() {
+		// Enqueue Swiper CSS (required for minicart upsells carousel)
+		wp_enqueue_style(
+			'swiper',
+			'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css',
+			array(),
+			'11.0.5'
+		);
+
+		// Enqueue gulcan-plugins product card styles (for minicart upsells)
+		$gulcan_plugins_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/public/assets/css/woocommerce-products-style.css';
+		$gulcan_plugins_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/public/assets/css/woocommerce-products-style.css' );
+		if ( file_exists( $gulcan_plugins_path ) ) {
+			wp_enqueue_style(
+				'gulcan-wc-products-public',
+				$gulcan_plugins_url,
+				array( 'swiper' ),
+				filemtime( $gulcan_plugins_path )
+			);
+		}
+
+		// Enqueue gulcan mobile product card styles
+		$gulcan_mobile_path = WP_PLUGIN_DIR . '/gulcan-plugins/public/css/gulcan-mobile-product-cards.css';
+		$gulcan_mobile_url = plugins_url( 'gulcan-plugins/public/css/gulcan-mobile-product-cards.css' );
+		if ( file_exists( $gulcan_mobile_path ) ) {
+			wp_enqueue_style(
+				'gulcan-mobile-product-cards',
+				$gulcan_mobile_url,
+				array( 'gulcan-wc-products-public' ),
+				filemtime( $gulcan_mobile_path )
+			);
+		}
+
 		// Upsell styles
-		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array(), GHSALES_VERSION );
+		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array( 'gulcan-mobile-product-cards' ), GHSALES_VERSION );
+
+		// Enqueue Swiper JS (required for minicart upsells carousel)
+		wp_enqueue_script(
+			'swiper',
+			'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js',
+			array(),
+			'11.0.5',
+			true
+		);
+
+		// Enqueue gulcan-plugins product scripts (for AJAX add to cart)
+		$gulcan_scripts_path = WP_PLUGIN_DIR . '/gulcan-plugins/includes/modules/woocommerce-products/public/assets/js/woocommerce-products-script.js';
+		$gulcan_scripts_url = plugins_url( 'gulcan-plugins/includes/modules/woocommerce-products/public/assets/js/woocommerce-products-script.js' );
+		if ( file_exists( $gulcan_scripts_path ) ) {
+			wp_enqueue_script(
+				'gulcan-wc-products-public',
+				$gulcan_scripts_url,
+				array( 'jquery', 'swiper' ),
+				filemtime( $gulcan_scripts_path ),
+				true
+			);
+
+			// Localize gulcan-plugins script for AJAX
+			wp_localize_script(
+				'gulcan-wc-products-public',
+				'gulcan_wc_products',
+				array(
+					'ajax_url'        => admin_url( 'admin-ajax.php' ),
+					'nonce'           => wp_create_nonce( 'gulcan_wc_products_nonce' ),
+					'cart_url'        => wc_get_cart_url(),
+					'currency_symbol' => get_woocommerce_currency_symbol(),
+					'strings'         => array(
+						'loading'      => __( 'Loading products...', 'ghsales' ),
+						'error'        => __( 'Error loading products', 'ghsales' ),
+						'no_products'  => __( 'No products found', 'ghsales' ),
+						'add_to_cart'  => __( 'Add to Cart', 'ghsales' ),
+						'read_more'    => __( 'View Product', 'ghsales' ),
+						'sale'         => __( 'Sale!', 'ghsales' ),
+					),
+				)
+			);
+		}
 
 		// Upsell JavaScript (AJAX add-to-cart)
-		wp_enqueue_script( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/js/ghsales-upsells.js', array( 'jquery', 'wc-add-to-cart' ), GHSALES_VERSION, true );
+		wp_enqueue_script( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/js/ghsales-upsells.js', array( 'jquery', 'wc-add-to-cart', 'gulcan-wc-products-public' ), GHSALES_VERSION, true );
 
 		// Frontend JS for BOGO quantity display in mini cart
 		wp_enqueue_script( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/js/ghsales-frontend.js', array( 'jquery' ), GHSALES_VERSION, true );

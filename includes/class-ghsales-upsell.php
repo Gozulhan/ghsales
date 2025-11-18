@@ -690,24 +690,120 @@ class GHSales_Upsell {
 	 * @return void
 	 */
 	public static function render_cart_upsells() {
+		// First, show special sales (BOGO, discounts)
+		self::render_special_sales();
+
+		// Then show upsell recommendations with Swiper
 		$recommendations = self::get_recommendations( 'cart', null, array( 'limit' => 4 ) );
 
 		if ( empty( $recommendations ) ) {
-			echo '<p class="ghsales-no-upsells">' . esc_html__( 'No recommendations available', 'ghsales' ) . '</p>';
 			return;
 		}
 
-		// Render upsell products
-		echo '<div class="ghsales-cart-upsells">';
-		echo '<h3 class="ghsales-upsells-title">' . esc_html__( 'You May Also Like', 'ghsales' ) . '</h3>';
-		echo '<div class="ghsales-upsells-grid">';
+		// Generate unique ID for this carousel instance
+		static $carousel_counter = 0;
+		$carousel_counter++;
+		$widget_id = 'ghsales-minicart-upsells-' . $carousel_counter;
 
+		// Get product data for each recommendation
+		$products_data = array();
 		foreach ( $recommendations as $item ) {
-			self::render_upsell_product( $item['product_id'] );
+			$product = wc_get_product( $item['product_id'] );
+			if ( $product ) {
+				$products_data[] = self::format_product_for_display( $product );
+			}
 		}
 
-		echo '</div>';
-		echo '</div>';
+		if ( empty( $products_data ) ) {
+			return;
+		}
+
+		// Render with Swiper carousel (same as gulcan-plugins)
+		?>
+		<div class="ghsales-cart-upsells-section">
+			<h3 class="ghsales-upsells-title">Misschien vind je dit ook leuk</h3>
+
+			<div id="<?php echo esc_attr( $widget_id ); ?>" class="ghsales-cart-upsells gulcan-wc-products-carousel">
+				<div class="gulcan-products-swiper swiper">
+					<div class="swiper-wrapper">
+						<?php foreach ( $products_data as $product_data ) : ?>
+							<div class="swiper-slide">
+								<?php self::render_product_card( $product_data ); ?>
+							</div>
+						<?php endforeach; ?>
+					</div>
+
+					<!-- Progress bar pagination -->
+					<div class="swiper-pagination"></div>
+				</div>
+			</div>
+
+			<script>
+			// Initialize Swiper for minicart upsells
+			document.addEventListener('DOMContentLoaded', function() {
+				if (typeof Swiper !== 'undefined') {
+					new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
+						slidesPerView: 2,
+						spaceBetween: 16,
+						centeredSlides: false,
+						slidesPerGroup: 1,
+						loop: false,
+						pagination: {
+							el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
+							type: 'progressbar',
+							clickable: false
+						},
+						breakpoints: {
+							768: {
+								slidesPerView: 3,
+								spaceBetween: 16
+							},
+							1024: {
+								slidesPerView: 2,
+								spaceBetween: 16
+							}
+						}
+					});
+				}
+			});
+			</script>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render special sales section (BOGO, discounts)
+	 * Shows active sale events at the top of minicart
+	 *
+	 * @return void
+	 */
+	private static function render_special_sales() {
+		// Check if GHSales Sale Engine is available
+		if ( ! class_exists( 'GHSales_Sale_Engine' ) ) {
+			return;
+		}
+
+		// Get active sale events
+		$active_events = GHSales_Sale_Engine::get_active_events();
+
+		if ( empty( $active_events ) ) {
+			return;
+		}
+
+		// Render special sales banner
+		?>
+		<div class="ghsales-special-sales-section">
+			<h3 class="ghsales-special-sales-title">Speciale Aanbiedingen</h3>
+			<div class="ghsales-special-sales-list">
+				<?php foreach ( $active_events as $event ) : ?>
+					<div class="ghsales-special-sale-item">
+						<h4><?php echo esc_html( $event->post_title ); ?></h4>
+						<!-- Additional event details can be added here -->
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
@@ -742,33 +838,182 @@ class GHSales_Upsell {
 	}
 
 	/**
-	 * Render individual upsell product card
+	 * Format product data for frontend display (same as gulcan-plugins)
 	 *
-	 * @param int $product_id Product ID
-	 * @return void
+	 * @param WC_Product $product WooCommerce product object
+	 * @return array Formatted product data
 	 */
-	private static function render_upsell_product( $product_id ) {
-		$product = wc_get_product( $product_id );
-
-		if ( ! $product ) {
-			return;
+	private static function format_product_for_display( $product ) {
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return array();
 		}
 
+		// Get product image
+		$image_id = $product->get_image_id();
+		$image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : wc_placeholder_img_src( 'woocommerce_single' );
+
+		// Get product pricing
+		$price_html = $product->get_price_html();
+		if ( empty( $price_html ) ) {
+			$price_html = $product->is_type( 'variable' )
+				? '<span class="price-range">' . __( 'Price varies', 'ghsales' ) . '</span>'
+				: '<span class="no-price">' . __( 'Price not available', 'ghsales' ) . '</span>';
+		}
+
+		// Get rating
+		$rating_count = $product->get_rating_count();
+		$average_rating = $product->get_average_rating();
+
+		// Get brand/category
+		$brand_name = '';
+		$brand_attribute = $product->get_attribute( 'pa_brand' );
+		if ( ! empty( $brand_attribute ) ) {
+			$brand_name = $brand_attribute;
+		} else {
+			$tags = wp_get_post_terms( $product->get_id(), 'product_tag' );
+			if ( ! empty( $tags ) ) {
+				$brand_name = $tags[0]->name;
+			} else {
+				$categories = wp_get_post_terms( $product->get_id(), 'product_cat' );
+				if ( ! empty( $categories ) ) {
+					foreach ( $categories as $category ) {
+						$cat_name_lower = strtolower( $category->name );
+						if ( ! in_array( $cat_name_lower, array( 'product', 'products', 'uncategorized', 'algemeen', 'shop' ) ) ) {
+							$brand_name = $category->name;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Get variation text for variable products
+		$variation_text = '';
+		if ( $product->is_type( 'variable' ) ) {
+			$attributes = $product->get_variation_attributes();
+			$attribute_names = array();
+			foreach ( $attributes as $attribute_name => $options ) {
+				if ( $attribute_name !== 'pa_brand' ) {
+					$label = wc_attribute_label( $attribute_name );
+					if ( in_array( strtolower( $label ), array( 'color', 'colour', 'size', 'material' ) ) ) {
+						$attribute_names[] = $label;
+					}
+				}
+			}
+			if ( ! empty( $attribute_names ) ) {
+				$variation_text = implode( ', ', $attribute_names );
+			}
+		}
+
+		return array(
+			'id'                => $product->get_id(),
+			'name'              => $product->get_name(),
+			'permalink'         => $product->get_permalink(),
+			'image_url'         => $image_url,
+			'price_html'        => $price_html,
+			'is_on_sale'        => $product->is_on_sale(),
+			'is_new_product'    => false, // Don't show NEW badges in minicart
+			'rating_count'      => $rating_count,
+			'average_rating'    => $average_rating,
+			'add_to_cart_url'   => $product->add_to_cart_url(),
+			'brand_name'        => $brand_name,
+			'variation_text'    => $variation_text,
+		);
+	}
+
+	/**
+	 * Render product card (same as gulcan-plugins)
+	 *
+	 * @param array $product_data Product data array
+	 * @return void
+	 */
+	private static function render_product_card( $product_data ) {
+		if ( empty( $product_data ) ) {
+			return;
+		}
 		?>
-		<div class="ghsales-upsell-card" data-product-id="<?php echo esc_attr( $product_id ); ?>">
-			<a href="<?php echo esc_url( $product->get_permalink() ); ?>" class="ghsales-upsell-image">
-				<?php echo $product->get_image( 'woocommerce_thumbnail' ); ?>
-			</a>
-			<div class="ghsales-upsell-details">
-				<h4 class="ghsales-upsell-title">
-					<a href="<?php echo esc_url( $product->get_permalink() ); ?>">
-						<?php echo esc_html( $product->get_name() ); ?>
-					</a>
-				</h4>
-				<span class="ghsales-upsell-price"><?php echo $product->get_price_html(); ?></span>
-				<button class="ghsales-upsell-add-to-cart button" data-product-id="<?php echo esc_attr( $product_id ); ?>">
-					<?php esc_html_e( 'Add to Cart', 'ghsales' ); ?>
+		<div class="gulcan-product-card">
+			<div class="gulcan-product-image-container">
+				<a href="<?php echo esc_url( $product_data['permalink'] ); ?>" class="gulcan-product-image-link">
+					<img src="<?php echo esc_url( $product_data['image_url'] ); ?>"
+						 alt="<?php echo esc_attr( $product_data['name'] ); ?>"
+						 class="gulcan-product-image">
+				</a>
+				<?php
+				// Show sale badges (BOGO, percentage, fixed discounts)
+				$product = wc_get_product( $product_data['id'] );
+				if ( $product ) {
+					$ghsales_badge = apply_filters( 'woocommerce_sale_flash', '', get_post( $product_data['id'] ), $product );
+					if ( ! empty( $ghsales_badge ) ) {
+						echo $ghsales_badge;
+					} elseif ( $product_data['is_on_sale'] ) {
+						echo '<span class="gulcan-product-sale">' . __( 'Sale', 'ghsales' ) . '</span>';
+					}
+				} elseif ( $product_data['is_on_sale'] ) {
+					echo '<span class="gulcan-product-sale">' . __( 'Sale', 'ghsales' ) . '</span>';
+				}
+				?>
+				<!-- Quick Add to Cart Button -->
+				<button class="gulcan-quick-add-cart ghsales-ajax-add-to-cart"
+						data-product-id="<?php echo esc_attr( $product_data['id'] ); ?>"
+						data-product-url="<?php echo esc_url( $product_data['add_to_cart_url'] ); ?>"
+						title="<?php esc_attr_e( 'Quick Add to Cart', 'ghsales' ); ?>">
+					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff">
+						<path d="M292.31-115.38q-25.31 0-42.66-17.35-17.34-17.35-17.34-42.65 0-25.31 17.34-42.66 17.35-17.34 42.66-17.34 25.31 0 42.65 17.34 17.35 17.35 17.35 42.66 0 25.3-17.35 42.65-17.34 17.35-42.65 17.35Zm375.38 0q-25.31 0-42.65-17.35-17.35-17.35-17.35-42.65 0-25.31 17.35-42.66 17.34-17.34 42.65-17.34t42.66 17.34q17.34 17.35 17.34 42.66 0 25.3-17.34 42.65-17.35 17.35-42.66 17.35ZM235.23-740 342-515.38h265.38q6.93 0 12.31-3.47 5.39-3.46 9.23-9.61l104.62-190q4.61-8.46.77-15-3.85-6.54-13.08-6.54h-486Zm-19.54-40h520.77q26.08 0 39.23 21.27 13.16 21.27 1.39 43.81l-114.31 208.3q-8.69 14.62-22.58 22.93-13.88 8.31-30.5 8.31H324l-48.62 89.23q-6.15 9.23-.38 20 5.77 10.77 17.31 10.77h435.38v40H292.31q-35 0-52.23-29.5-17.23-29.5-.85-59.27l60.15-107.23L152.31-820H80v-40h97.69l38 80ZM342-515.38h280-280Z"/>
+					</svg>
 				</button>
+			</div>
+
+			<div class="gulcan-product-content">
+				<!-- Brand/Category name -->
+				<?php if ( ! empty( $product_data['brand_name'] ) ) : ?>
+					<div class="gulcan-product-meta">
+						<span class="gulcan-product-category">
+							<?php
+							echo esc_html( strtoupper( $product_data['brand_name'] ) );
+							if ( ! empty( $product_data['variation_text'] ) ) {
+								echo ' | ' . esc_html( strtoupper( $product_data['variation_text'] ) );
+							}
+							?>
+						</span>
+					</div>
+				<?php endif; ?>
+
+				<!-- Review stars -->
+				<div class="gulcan-product-rating">
+					<div class="gulcan-stars">
+						<?php if ( $product_data['rating_count'] > 0 ) : ?>
+							<?php for ( $i = 1; $i <= 5; $i++ ) : ?>
+								<?php if ( $i <= $product_data['average_rating'] ) : ?>
+									<svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="#ffd700" class="gulcan-star filled">
+										<path d="m243-144 63-266L96-589l276-24 108-251 108 252 276 23-210 179 63 266-237-141-237 141Z"/>
+									</svg>
+								<?php else : ?>
+									<svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="#e3e3e3" class="gulcan-star empty">
+										<path d="m352-293 128-76 129 76-34-144 111-95-147-13-59-137-59 137-147 13 112 95-34 144ZM243-144l63-266L96-589l276-24 108-251 108 252 276 23-210 179 63 266-237-141-237 141Zm237-333Z"/>
+									</svg>
+								<?php endif; ?>
+							<?php endfor; ?>
+							<span class="gulcan-review-count">(<?php echo $product_data['rating_count']; ?>)</span>
+						<?php else : ?>
+							<?php for ( $i = 1; $i <= 5; $i++ ) : ?>
+								<svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="#e3e3e3" class="gulcan-star empty">
+									<path d="m352-293 128-76 129 76-34-144 111-95-147-13-59-137-59 137-147 13 112 95-34 144ZM243-144l63-266L96-589l276-24 108-251 108 252 276 23-210 179 63 266-237-141-237 141Zm237-333Z"/>
+								</svg>
+							<?php endfor; ?>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<p class="gulcan-product-title">
+					<a href="<?php echo esc_url( $product_data['permalink'] ); ?>">
+						<?php echo esc_html( $product_data['name'] ); ?>
+					</a>
+				</p>
+
+				<div class="gulcan-product-price">
+					<?php echo $product_data['price_html']; ?>
+				</div>
 			</div>
 		</div>
 		<?php
