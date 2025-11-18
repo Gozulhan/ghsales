@@ -470,6 +470,16 @@ class GHSales_Core {
 
 		// Admin JS
 		wp_enqueue_script( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/js/ghsales-admin.js', array( 'jquery', 'select2' ), GHSALES_VERSION, true );
+
+		// Localize script with AJAX URL and nonce for security
+		wp_localize_script(
+			'ghsales-admin',
+			'ghsalesAdmin',
+			array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'ghsales_admin_nonce' ),
+			)
+		);
 	}
 
 	/**

@@ -57,8 +57,35 @@ jQuery(document).ready(function($) {
             // Hide target selector for "All Products"
             $targetSelector.hide();
         } else {
-            // Show target selector
+            // Show target selector and load correct options via AJAX
             $targetSelector.show();
+
+            // Show loading message
+            $targetSelector.find('.ghsales-target-content').html('<p>Loading...</p>');
+
+            // Load the correct selector via AJAX
+            $.ajax({
+                url: ghsalesAdmin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ghsales_load_target_selector',
+                    applies_to: value,
+                    index: index,
+                    nonce: ghsalesAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $targetSelector.find('.ghsales-target-content').html(response.data.html);
+                        // Re-initialize Select2 for the new dropdown
+                        initializeSelect2();
+                    } else {
+                        $targetSelector.find('.ghsales-target-content').html('<p>Error loading options.</p>');
+                    }
+                },
+                error: function() {
+                    $targetSelector.find('.ghsales-target-content').html('<p>Error loading options.</p>');
+                }
+            });
         }
     });
 

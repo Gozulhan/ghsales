@@ -43,6 +43,9 @@ class GHSales_Event_CPT {
 
 		// Add custom row actions
 		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_actions' ), 10, 2 );
+
+		// AJAX handler for loading target selectors
+		add_action( 'wp_ajax_ghsales_load_target_selector', array( __CLASS__, 'ajax_load_target_selector' ) );
 	}
 
 	/**
@@ -309,7 +312,9 @@ class GHSales_Event_CPT {
 
 			<div class="ghsales-rule-field ghsales-target-selector" data-index="<?php echo esc_attr( $index ); ?>" style="<?php echo ( $applies_to === 'all' ) ? 'display:none;' : ''; ?>">
 				<label><?php esc_html_e( 'Select Target', 'ghsales' ); ?></label>
-				<?php self::render_target_selector( $applies_to, $target_ids, $index ); ?>
+				<div class="ghsales-target-content">
+					<?php self::render_target_selector( $applies_to, $target_ids, $index ); ?>
+				</div>
 			</div>
 
 			<div class="ghsales-rule-field">
@@ -647,5 +652,33 @@ class GHSales_Event_CPT {
 		}
 
 		return $actions;
+	}
+
+	/**
+	 * AJAX handler to load target selector options dynamically
+	 * Called when user changes "Applies To" dropdown
+	 *
+	 * @return void
+	 */
+	public static function ajax_load_target_selector() {
+		// Verify nonce for security
+		check_ajax_referer( 'ghsales_admin_nonce', 'nonce' );
+
+		// Get parameters
+		$applies_to = isset( $_POST['applies_to'] ) ? sanitize_text_field( $_POST['applies_to'] ) : '';
+		$index      = isset( $_POST['index'] ) ? sanitize_text_field( $_POST['index'] ) : '';
+
+		// Validate parameters
+		if ( empty( $applies_to ) || empty( $index ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'ghsales' ) ) );
+		}
+
+		// Start output buffering to capture the HTML
+		ob_start();
+		self::render_target_selector( $applies_to, '', $index );
+		$html = ob_get_clean();
+
+		// Return the HTML
+		wp_send_json_success( array( 'html' => $html ) );
 	}
 }
