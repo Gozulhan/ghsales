@@ -798,12 +798,19 @@ class GHSales_Upsell {
 		// Get products for each sale event
 		$sale_products = array();
 		foreach ( $active_events as $event ) {
+			error_log( 'GHSales Special Sales: Checking event - ' . $event->post_title );
+
 			// Get products from this event's rules
 			if ( ! empty( $event->rules ) ) {
 				foreach ( $event->rules as $rule ) {
+					error_log( 'GHSales Special Sales: Rule found - type: ' . $rule->discount_type );
+
 					// Get product IDs from the rule
 					$product_ids = ! empty( $rule->product_ids ) ? explode( ',', $rule->product_ids ) : array();
 					$category_ids = ! empty( $rule->category_ids ) ? explode( ',', $rule->category_ids ) : array();
+
+					error_log( 'GHSales Special Sales: product_ids = ' . $rule->product_ids );
+					error_log( 'GHSales Special Sales: category_ids = ' . $rule->category_ids );
 
 					// Get products by IDs
 					if ( ! empty( $product_ids ) ) {
@@ -839,7 +846,9 @@ class GHSales_Upsell {
 		}
 
 		// If no products found, don't show the section
+		error_log( 'GHSales Special Sales: Total products found = ' . count( $sale_products ) );
 		if ( empty( $sale_products ) ) {
+			error_log( 'GHSales Special Sales: No products found - returning empty array' );
 			return array();
 		}
 
