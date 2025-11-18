@@ -277,6 +277,7 @@ class GHSales_Core {
 		if ( is_admin() ) {
 			add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+			add_action( 'admin_init', array( $this, 'handle_admin_actions' ) );
 		}
 
 		// Frontend hooks
@@ -319,6 +320,15 @@ class GHSales_Core {
 	 * @return void
 	 */
 	public function render_admin_page() {
+		// Show success message if colors were redetected
+		if ( isset( $_GET['updated'] ) && $_GET['updated'] === 'colors_redetected' ) {
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p><strong><?php esc_html_e( 'Colors re-detected successfully!', 'ghsales' ); ?></strong></p>
+				<p><?php esc_html_e( 'The default color scheme has been updated with your current Elementor global colors.', 'ghsales' ); ?></p>
+			</div>
+			<?php
+		}
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -345,6 +355,12 @@ class GHSales_Core {
 			<?php $this->render_database_status(); ?>
 
 			<h2><?php esc_html_e( 'Saved Color Schemes', 'ghsales' ); ?></h2>
+			<p>
+				<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=ghsales&action=redetect_colors' ), 'redetect_colors' ) ); ?>" class="button button-secondary">
+					<?php esc_html_e( 'Re-detect Elementor Colors', 'ghsales' ); ?>
+				</a>
+				<span class="description"><?php esc_html_e( 'Click this to update the default color scheme with your current Elementor global colors.', 'ghsales' ); ?></span>
+			</p>
 			<?php $this->render_color_schemes(); ?>
 
 			<h2><?php esc_html_e( 'WordPress Options Backup', 'ghsales' ); ?></h2>
@@ -447,6 +463,127 @@ class GHSales_Core {
 		// - Add upsells to product pages
 		// - Track add-to-cart events
 		// - Integrate with checkout process
+	}
+
+	/**
+	 * Handle admin page actions
+	 * Processes button clicks and admin actions
+	 *
+	 * @return void
+	 */
+	public function handle_admin_actions() {
+		// Check if we have an action parameter
+		if ( ! isset( $_GET['action'] ) || ! isset( $_GET['page'] ) || $_GET['page'] !== 'ghsales' ) {
+			return;
+		}
+
+		$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+
+		// Handle color re-detection
+		if ( $action === 'redetect_colors' ) {
+			// Verify nonce
+			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'redetect_colors' ) ) {
+				wp_die( esc_html__( 'Security check failed', 'ghsales' ) );
+			}
+
+			// Check user capabilities
+			if ( ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'You do not have permission to perform this action', 'ghsales' ) );
+			}
+
+			// Load installer class
+			require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-installer.php';
+
+			// Re-detect colors using installer method
+			$colors = $this->get_current_site_colors_wrapper();
+
+			// Update the default color scheme in database
+			global $wpdb;
+			$wpdb->update(
+				$wpdb->prefix . 'ghsales_color_schemes',
+				array(
+					'primary_color'    => $colors['primary'],
+					'secondary_color'  => $colors['secondary'],
+					'accent_color'     => $colors['accent'],
+					'text_color'       => $colors['text'],
+					'background_color' => $colors['background'],
+				),
+				array( 'scheme_name' => 'Default Theme Colors' ),
+				array( '%s', '%s', '%s', '%s', '%s' ),
+				array( '%s' )
+			);
+
+			// Update backup in wp_options
+			update_option( 'ghsales_original_colors', $colors, false );
+
+			// Redirect with success message
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'    => 'ghsales',
+						'updated' => 'colors_redetected',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+	}
+
+	/**
+	 * Wrapper to call installer's color detection method
+	 * This is needed because the installer method is private static
+	 *
+	 * @return array Detected colors
+	 */
+	private function get_current_site_colors_wrapper() {
+		$colors = array(
+			'primary'    => '#3498db',
+			'secondary'  => '#2c3e50',
+			'accent'     => '#e74c3c',
+			'text'       => '#333333',
+			'background' => '#ffffff',
+		);
+
+		// Try to get Elementor global colors if Elementor is active
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			// Try newer Elementor Kit settings first (Elementor 3.0+)
+			$kit_id = get_option( 'elementor_active_kit' );
+
+			if ( $kit_id ) {
+				$kit_settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
+
+				if ( ! empty( $kit_settings['system_colors'] ) ) {
+					$system_colors = $kit_settings['system_colors'];
+
+					// Map Elementor system colors to our naming
+					foreach ( $system_colors as $color_item ) {
+						if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
+							$elementor_id = $color_item['_id'];
+							$hex_color    = $color_item['color'];
+
+							// Map Elementor IDs to our keys
+							switch ( $elementor_id ) {
+								case 'primary':
+									$colors['primary'] = $hex_color;
+									break;
+								case 'secondary':
+									$colors['secondary'] = $hex_color;
+									break;
+								case 'text':
+									$colors['text'] = $hex_color;
+									break;
+								case 'accent':
+									$colors['accent'] = $hex_color;
+									break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return $colors;
 	}
 
 	/**

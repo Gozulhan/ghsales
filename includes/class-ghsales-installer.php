@@ -259,31 +259,78 @@ class GHSales_Installer {
 	 */
 	private static function get_current_site_colors() {
 		$colors = array(
-			'primary'    => '#3498db', // Blue
-			'secondary'  => '#2c3e50', // Dark blue-gray
-			'accent'     => '#e74c3c', // Red
-			'text'       => '#333333', // Dark gray
-			'background' => '#ffffff', // White
+			'primary'    => '#3498db', // Blue (fallback)
+			'secondary'  => '#2c3e50', // Dark blue-gray (fallback)
+			'accent'     => '#e74c3c', // Red (fallback)
+			'text'       => '#333333', // Dark gray (fallback)
+			'background' => '#ffffff', // White (fallback)
 		);
 
 		// Try to get Elementor global colors if Elementor is active
 		if ( class_exists( '\Elementor\Plugin' ) ) {
-			$elementor_colors = get_option( 'elementor_scheme_color', array() );
+			// Try newer Elementor Kit settings first (Elementor 3.0+)
+			$kit_id = get_option( 'elementor_active_kit' );
 
-			// Map Elementor color slots to our naming convention
-			$color_map = array(
-				'primary'    => 1, // Elementor slot 1 = Primary
-				'secondary'  => 2, // Elementor slot 2 = Secondary
-				'accent'     => 3, // Elementor slot 3 = Accent
-				'text'       => 4, // Elementor slot 4 = Text
-			);
+			if ( $kit_id ) {
+				$kit_settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
 
-			foreach ( $color_map as $key => $slot ) {
-				if ( ! empty( $elementor_colors[ $slot ] ) ) {
-					$colors[ $key ] = $elementor_colors[ $slot ];
+				if ( ! empty( $kit_settings['system_colors'] ) ) {
+					$system_colors = $kit_settings['system_colors'];
+
+					// Map Elementor system colors to our naming
+					foreach ( $system_colors as $color_item ) {
+						if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
+							$elementor_id = $color_item['_id'];
+							$hex_color = $color_item['color'];
+
+							// Map Elementor IDs to our keys
+							switch ( $elementor_id ) {
+								case 'primary':
+									$colors['primary'] = $hex_color;
+									break;
+								case 'secondary':
+									$colors['secondary'] = $hex_color;
+									break;
+								case 'text':
+									$colors['text'] = $hex_color;
+									break;
+								case 'accent':
+									$colors['accent'] = $hex_color;
+									break;
+							}
+						}
+					}
+
+					error_log( 'GHSales: Detected Elementor colors from Kit settings' );
+				}
+			}
+
+			// Fallback to old color scheme format (Elementor < 3.0)
+			if ( $colors['primary'] === '#3498db' ) { // Still using fallback
+				$elementor_colors = get_option( 'elementor_scheme_color', array() );
+
+				if ( ! empty( $elementor_colors ) ) {
+					// Map old Elementor color slots to our naming convention
+					$color_map = array(
+						'primary'    => 1, // Elementor slot 1 = Primary
+						'secondary'  => 2, // Elementor slot 2 = Secondary
+						'accent'     => 3, // Elementor slot 3 = Accent
+						'text'       => 4, // Elementor slot 4 = Text
+					);
+
+					foreach ( $color_map as $key => $slot ) {
+						if ( ! empty( $elementor_colors[ $slot ] ) ) {
+							$colors[ $key ] = $elementor_colors[ $slot ];
+						}
+					}
+
+					error_log( 'GHSales: Detected Elementor colors from legacy scheme' );
 				}
 			}
 		}
+
+		// Log what we detected
+		error_log( 'GHSales: Final detected colors: ' . print_r( $colors, true ) );
 
 		return $colors;
 	}
