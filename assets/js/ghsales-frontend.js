@@ -37,7 +37,7 @@ jQuery(document).ready(function($) {
                 // Create quantity info div with minimal styling - matches .text-cp-gray-200 .text-[12px]
                 var $bogoQtyDiv = $('<div>', {
                     'class': 'ghsales-bogo-quantity text-cp-gray-200 text-[12px]',
-                    'style': 'font-size: 12px; color: var(--color-cp-gray-200, #666); margin-bottom: 4px;'
+                    'style': 'font-size: 12px; color: var(--color-cp-gray-200, #666);'
                 });
 
                 // Use translations for "betaald" and "gratis"
