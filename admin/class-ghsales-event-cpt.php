@@ -318,14 +318,18 @@ class GHSales_Event_CPT {
 			</div>
 
 			<div class="ghsales-rule-field">
-				<label><?php esc_html_e( 'Discount Value', 'ghsales' ); ?></label>
+				<label class="ghsales-discount-value-label" data-index="<?php echo esc_attr( $index ); ?>">
+					<?php esc_html_e( 'Discount Value', 'ghsales' ); ?>
+				</label>
 				<input type="number"
 					   name="ghsales_rules[<?php echo esc_attr( $index ); ?>][discount_value]"
 					   value="<?php echo esc_attr( $discount_value ); ?>"
 					   step="0.01"
 					   min="0"
-					   class="widefat"
+					   class="widefat ghsales-discount-value-input"
+					   data-index="<?php echo esc_attr( $index ); ?>"
 					   placeholder="<?php esc_attr_e( 'e.g., 10 for 10% off or €10 fixed', 'ghsales' ); ?>">
+				<p class="description ghsales-discount-value-help" data-index="<?php echo esc_attr( $index ); ?>"></p>
 			</div>
 
 			<div class="ghsales-rule-field">

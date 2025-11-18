@@ -12,6 +12,9 @@ jQuery(document).ready(function($) {
     // Initialize Select2 for existing selectors
     initializeSelect2();
 
+    // Update discount value labels on page load
+    updateDiscountValueLabels();
+
     // Add new rule
     $('#ghsales-add-rule').on('click', function(e) {
         e.preventDefault();
@@ -28,6 +31,9 @@ jQuery(document).ready(function($) {
 
         // Initialize Select2 for new selectors
         initializeSelect2();
+
+        // Update labels for the new rule
+        updateDiscountValueLabels();
 
         ruleIndex++;
     });
@@ -105,6 +111,11 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // Handle "Discount Type" dropdown change
+    $(document).on('change', 'select[name*="[rule_type]"]', function() {
+        updateDiscountValueLabels();
+    });
+
     // Initialize Select2 dropdowns
     function initializeSelect2() {
         if ($.fn.select2) {
@@ -112,6 +123,52 @@ jQuery(document).ready(function($) {
                 width: '100%'
             });
         }
+    }
+
+    // Update discount value labels based on rule type
+    function updateDiscountValueLabels() {
+        $('select[name*="[rule_type]"]').each(function() {
+            var $select = $(this);
+            var ruleType = $select.val();
+            var index = $select.attr('name').match(/\[(\d+)\]/)[1];
+
+            var $label = $('.ghsales-discount-value-label[data-index="' + index + '"]');
+            var $input = $('.ghsales-discount-value-input[data-index="' + index + '"]');
+            var $help = $('.ghsales-discount-value-help[data-index="' + index + '"]');
+
+            // Update label, placeholder, and help text based on rule type
+            switch(ruleType) {
+                case 'percentage':
+                    $label.text('Discount Percentage');
+                    $input.attr('placeholder', 'e.g., 20 for 20% off');
+                    $help.text('Enter the percentage discount (e.g., 20 for 20% off)');
+                    break;
+                case 'fixed':
+                    $label.text('Discount Amount');
+                    $input.attr('placeholder', 'e.g., 10.00 for €10 off');
+                    $help.text('Enter the fixed amount discount (e.g., 10.00 for €10 off)');
+                    break;
+                case 'bogo':
+                    $label.text('Free Items Quantity');
+                    $input.attr('placeholder', 'e.g., 1 for Buy 1 Get 1 Free');
+                    $help.text('Enter number of free items (e.g., 1 = Buy 1 Get 1 Free, 2 = Buy 1 Get 2 Free)');
+                    break;
+                case 'buy_x_get_y':
+                    $label.text('Free Items (Y)');
+                    $input.attr('placeholder', 'e.g., 1 for Buy 2 Get 1 Free');
+                    $help.text('Enter number of free items to give (e.g., 1 = Buy 2 Get 1 Free)');
+                    break;
+                case 'spend_threshold':
+                    $label.text('Discount Value');
+                    $input.attr('placeholder', 'e.g., 10 for 10% or €10 off');
+                    $help.text('Enter discount percentage or fixed amount when spending above threshold');
+                    break;
+                default:
+                    $label.text('Discount Value');
+                    $input.attr('placeholder', 'e.g., 10');
+                    $help.text('');
+            }
+        });
     }
 
 });
