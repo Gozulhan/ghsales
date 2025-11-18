@@ -44,6 +44,12 @@ class GHSales_Sale_Engine {
 		// Display discount information on cart/checkout
 		add_filter( 'woocommerce_cart_item_price', array( __CLASS__, 'display_discounted_price' ), 10, 3 );
 
+		// Show BOGO quantity information
+		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'display_bogo_quantity' ), 10, 3 );
+
+		// Add BOGO info after quantity in cart
+		add_filter( 'woocommerce_cart_item_name', array( __CLASS__, 'add_bogo_info_to_name' ), 10, 3 );
+
 		// Show sale badges on product pages
 		add_filter( 'woocommerce_sale_flash', array( __CLASS__, 'custom_sale_badge' ), 10, 3 );
 
@@ -133,22 +139,41 @@ class GHSales_Sale_Engine {
 
 		// Loop through cart items and apply discounts
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			// Skip BOGO free items (we'll add those separately)
-			if ( isset( $cart_item['ghsales_free_item'] ) && $cart_item['ghsales_free_item'] === true ) {
-				// Set price to 0 for free items
-				$cart_item['data']->set_price( 0 );
-				continue;
-			}
-
 			$product = $cart_item['data'];
 			$product_id = $cart_item['product_id'];
 			$variation_id = $cart_item['variation_id'];
 			$actual_product_id = $variation_id ? $variation_id : $product_id;
+			$quantity = $cart_item['quantity'];
 
 			// Get original price
 			$original_price = floatval( $product->get_price() );
 
-			// Find applicable discount for this product
+			// Check if this item has BOGO discount
+			if ( isset( $cart_item['ghsales_bogo'] ) ) {
+				$bogo_data = $cart_item['ghsales_bogo'];
+				$free_per_paid = $bogo_data['free_per_paid'];
+
+				// Calculate: customer pays for X, gets X + free items
+				// For 1+1: qty=1 means they pay for 1, get 2 total
+				// For 1+2: qty=1 means they pay for 1, get 3 total
+				$total_items_received = $quantity * ( 1 + $free_per_paid );
+
+				// Calculate the effective price per item (spread cost across all items)
+				$effective_price_per_item = $original_price / ( 1 + $free_per_paid );
+				$product->set_price( $effective_price_per_item );
+
+				// Store BOGO info for display
+				$cart_item['ghsales_bogo_display'] = array(
+					'original_price' => $original_price,
+					'total_items' => $total_items_received,
+					'free_per_paid' => $free_per_paid,
+					'event_name' => $bogo_data['event_name'],
+				);
+
+				continue; // Skip other discount checks for BOGO items
+			}
+
+			// Find applicable discount for non-BOGO products
 			$discount = self::find_best_discount( $actual_product_id, $active_events, $original_price );
 
 			if ( $discount ) {
@@ -263,7 +288,7 @@ class GHSales_Sale_Engine {
 
 	/**
 	 * Handle BOGO discount when item is added to cart
-	 * Automatically adds free items based on BOGO rules
+	 * Marks items with BOGO data instead of adding separate free items
 	 *
 	 * @param string $cart_item_key Cart item key
 	 * @param int    $product_id Product ID
@@ -274,11 +299,6 @@ class GHSales_Sale_Engine {
 	 * @return void
 	 */
 	public static function handle_bogo_addition( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
-		// Skip if this is already a free item to avoid infinite loop
-		if ( isset( $cart_item_data['ghsales_free_item'] ) && $cart_item_data['ghsales_free_item'] === true ) {
-			return;
-		}
-
 		// Get active events
 		$active_events = self::get_active_events();
 
@@ -292,22 +312,11 @@ class GHSales_Sale_Engine {
 		$bogo_rule = self::find_bogo_rule( $actual_product_id, $active_events );
 
 		if ( $bogo_rule ) {
-			// Calculate how many free items to add
-			$free_quantity = intval( $bogo_rule['free_items'] ) * $quantity;
-
-			if ( $free_quantity > 0 ) {
-				// Add free items to cart
-				WC()->cart->add_to_cart(
-					$product_id,
-					$free_quantity,
-					$variation_id,
-					$variation,
-					array(
-						'ghsales_free_item' => true,
-						'ghsales_event_name' => $bogo_rule['event_name'],
-					)
-				);
-			}
+			// Mark this cart item as BOGO (we'll handle pricing in apply_cart_discounts)
+			WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] = array(
+				'free_per_paid' => intval( $bogo_rule['free_items'] ),
+				'event_name' => $bogo_rule['event_name'],
+			);
 		}
 	}
 
@@ -382,9 +391,16 @@ class GHSales_Sale_Engine {
 	 * @return string Modified price HTML
 	 */
 	public static function display_discounted_price( $price_html, $cart_item, $cart_item_key ) {
-		// Show "FREE" for BOGO items
-		if ( isset( $cart_item['ghsales_free_item'] ) && $cart_item['ghsales_free_item'] === true ) {
-			return '<span class="ghsales-free-item"><strong>' . __( 'FREE', 'ghsales' ) . '</strong></span>';
+		// Show BOGO pricing
+		if ( isset( $cart_item['ghsales_bogo_display'] ) ) {
+			$bogo = $cart_item['ghsales_bogo_display'];
+			$free_per_paid = $bogo['free_per_paid'];
+
+			return sprintf(
+				'%s<br><small class="ghsales-bogo-label" style="color: #46b450; font-weight: bold;">%s</small>',
+				wc_price( $bogo['original_price'] ),
+				sprintf( __( '1+%d FREE', 'ghsales' ), $free_per_paid )
+			);
 		}
 
 		// Show original + discounted price if discount applied
@@ -421,6 +437,58 @@ class GHSales_Sale_Engine {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Display BOGO quantity information
+	 *
+	 * @param string $quantity_html Quantity HTML
+	 * @param string $cart_item_key Cart item key
+	 * @param array  $cart_item Cart item data
+	 * @return string Modified quantity HTML
+	 */
+	public static function display_bogo_quantity( $quantity_html, $cart_item_key, $cart_item ) {
+		if ( isset( $cart_item['ghsales_bogo_display'] ) ) {
+			$bogo = $cart_item['ghsales_bogo_display'];
+			$quantity = $cart_item['quantity'];
+			$total_items = $bogo['total_items'];
+			$free_per_paid = $bogo['free_per_paid'];
+
+			// Show: Aantal: X (Ontvangt: Y) with 1+1 FREE label
+			return sprintf(
+				'%s<br><small style="color: #46b450; font-weight: bold;">%s: %d (%d+%d FREE)</small>',
+				$quantity_html,
+				__( 'Ontvangt', 'ghsales' ),
+				$total_items,
+				$quantity,
+				$quantity * $free_per_paid
+			);
+		}
+
+		return $quantity_html;
+	}
+
+	/**
+	 * Add BOGO badge to product name in cart
+	 *
+	 * @param string $name Product name HTML
+	 * @param array  $cart_item Cart item data
+	 * @param string $cart_item_key Cart item key
+	 * @return string Modified name HTML
+	 */
+	public static function add_bogo_info_to_name( $name, $cart_item, $cart_item_key ) {
+		if ( isset( $cart_item['ghsales_bogo_display'] ) ) {
+			$bogo = $cart_item['ghsales_bogo_display'];
+			$free_per_paid = $bogo['free_per_paid'];
+
+			// Add BOGO badge after product name
+			$name .= sprintf(
+				' <span class="ghsales-bogo-badge" style="background: #46b450; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 8px;">1+%d FREE</span>',
+				$free_per_paid
+			);
+		}
+
+		return $name;
 	}
 
 	/**
