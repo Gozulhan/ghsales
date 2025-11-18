@@ -127,12 +127,7 @@ class GHSales_Sale_Engine {
 		// Get active sale events
 		$active_events = self::get_active_events();
 
-		// Debug logging
-		error_log( 'GHSales Engine: apply_cart_discounts called' );
-		error_log( 'GHSales Engine: Found ' . count( $active_events ) . ' active events' );
-
 		if ( empty( $active_events ) ) {
-			error_log( 'GHSales Engine: No active sale events found' );
 			return; // No active sales
 		}
 
