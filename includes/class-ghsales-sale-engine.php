@@ -145,23 +145,39 @@ class GHSales_Sale_Engine {
 			$actual_product_id = $variation_id ? $variation_id : $product_id;
 			$quantity = $cart_item['quantity'];
 
-			// Get original price
-			$original_price = floatval( $product->get_price() );
+			// Get original price (regular price, not sale price)
+			$wc_product = wc_get_product( $actual_product_id );
+			$regular_price = floatval( $wc_product->get_regular_price() );
+			$current_price = floatval( $product->get_price() );
+			$is_on_sale = $wc_product->is_on_sale();
+
+			// Determine which price to use based on "apply_on_sale_price" setting
+			// We'll check this per event below
+			$original_price = $current_price;
 
 			// Check if this item has BOGO discount
 			if ( isset( $cart_item['ghsales_bogo'] ) ) {
 				$bogo_data = $cart_item['ghsales_bogo'];
 				$free_per_paid = $bogo_data['free_per_paid'];
 				$allow_stacking = isset( $bogo_data['allow_stacking'] ) ? $bogo_data['allow_stacking'] : false;
+				$apply_on_sale_price = isset( $bogo_data['apply_on_sale_price'] ) ? $bogo_data['apply_on_sale_price'] : false;
+
+				// Check if product is on WooCommerce sale and if we should skip it
+				if ( $is_on_sale && ! $apply_on_sale_price ) {
+					// Product is on sale, but event says don't apply to sale items
+					// Skip this BOGO and treat as normal item
+					unset( $cart_item['ghsales_bogo'] );
+					continue;
+				}
 
 				// Calculate: customer pays for X, gets X + free items
 				// For 1+1: qty=1 means they pay full price for 1, get 1 free (2 total)
 				// For 1+2: qty=1 means they pay full price for 1, get 2 free (3 total)
 				$total_items_received = $quantity * ( 1 + $free_per_paid );
 
-				// BOGO means customer pays FULL PRICE for what they buy (initially)
-				// But if stacking is allowed, we'll apply other discounts below
-				$final_price = $original_price;
+				// Determine base price: use current price (which may be WC sale price)
+				// unless apply_on_sale_price is off and item is on sale
+				$final_price = $current_price;
 
 				// Check if stacking is allowed - if so, look for other discounts
 				if ( $allow_stacking ) {
@@ -387,6 +403,7 @@ class GHSales_Sale_Engine {
 						'free_items' => intval( $rule->discount_value ),
 						'event_name' => $event->post_title,
 						'allow_stacking' => ! empty( $event->allow_stacking ),
+						'apply_on_sale_price' => ! empty( $event->apply_on_sale_price ),
 					);
 					$highest_priority = $rule->priority;
 				}
