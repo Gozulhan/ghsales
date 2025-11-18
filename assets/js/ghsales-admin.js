@@ -53,6 +53,8 @@ jQuery(document).ready(function($) {
         var value = $this.val();
         var $targetSelector = $('.ghsales-target-selector[data-index="' + index + '"]');
 
+        console.log('Applies To changed - Index:', index, 'Value:', value);
+
         if (value === 'all') {
             // Hide target selector for "All Products"
             $targetSelector.hide();
@@ -67,19 +69,30 @@ jQuery(document).ready(function($) {
                 return;
             }
 
+            // Validate index before sending
+            if (!index && index !== 0) {
+                console.error('Index is undefined or empty:', index);
+                $targetSelector.find('.ghsales-target-content').html('<p>Error: Invalid rule index.</p>');
+                return;
+            }
+
             // Show loading message
             $targetSelector.find('.ghsales-target-content').html('<p>Loading...</p>');
+
+            var ajaxData = {
+                action: 'ghsales_load_target_selector',
+                applies_to: value,
+                index: index,
+                nonce: ghsalesAdmin.nonce
+            };
+
+            console.log('Sending AJAX request with data:', ajaxData);
 
             // Load the correct selector via AJAX
             $.ajax({
                 url: ghsalesAdmin.ajaxurl,
                 type: 'POST',
-                data: {
-                    action: 'ghsales_load_target_selector',
-                    applies_to: value,
-                    index: index,
-                    nonce: ghsalesAdmin.nonce
-                },
+                data: ajaxData,
                 success: function(response) {
                     console.log('AJAX Response:', response);
                     if (response.success) {
