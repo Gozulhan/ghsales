@@ -252,6 +252,36 @@ class GHSales_Sale_Engine {
 			$discount = self::find_best_discount( $actual_product_id, $active_events, $original_price );
 
 			if ( $discount ) {
+				// Check purchase limit if set for this discount rule
+				if ( ! empty( $discount['max_quantity'] ) ) {
+					$limit_check = self::check_purchase_limit(
+						$discount['rule_id'],
+						$discount['max_quantity'],
+						$quantity
+					);
+
+					// If limit exceeded, auto-reduce quantity to maximum allowed
+					if ( ! $limit_check['allowed'] ) {
+						$max_allowed = $limit_check['remaining'] + $limit_check['purchased'];
+						error_log( 'GHSales: Regular discount limit reached (qty=' . $quantity . ', limit=' . $discount['max_quantity'] . ') - auto-reducing to ' . $max_allowed );
+
+						// Set quantity to maximum allowed
+						WC()->cart->cart_contents[ $cart_item_key ]['quantity'] = $max_allowed;
+						$quantity = $max_allowed; // Update local variable
+
+						// Show warning that we reduced the quantity
+						WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
+							'remaining' => 0, // No more remaining after this
+							'max_quantity' => $discount['max_quantity'],
+						);
+
+						// If max_allowed is 0, skip applying discount
+						if ( $max_allowed === 0 ) {
+							continue;
+						}
+					}
+				}
+
 				// Apply the discount
 				$new_price = self::calculate_discounted_price( $original_price, $discount );
 				$product->set_price( $new_price );
@@ -263,6 +293,8 @@ class GHSales_Sale_Engine {
 					'discount_type' => $discount['type'],
 					'discount_value' => $discount['value'],
 					'event_name' => $discount['event_name'],
+					'rule_id' => $discount['rule_id'],
+					'max_quantity' => $discount['max_quantity'],
 				);
 			}
 		}
@@ -329,6 +361,8 @@ class GHSales_Sale_Engine {
 						'value' => floatval( $rule->discount_value ),
 						'event_name' => $event->post_title,
 						'priority' => $rule->priority,
+						'rule_id' => intval( $rule->id ),
+						'max_quantity' => ! empty( $rule->max_quantity_per_customer ) ? intval( $rule->max_quantity_per_customer ) : null,
 					);
 					$highest_priority = $rule->priority;
 				}
@@ -762,6 +796,11 @@ class GHSales_Sale_Engine {
 		if ( isset( $values['ghsales_bogo_display'] ) ) {
 			$item->add_meta_data( '_ghsales_bogo_display', $values['ghsales_bogo_display'], true );
 		}
+
+		// Save regular discount data if present (for purchase limit tracking)
+		if ( isset( $values['ghsales_discount'] ) ) {
+			$item->add_meta_data( '_ghsales_discount', $values['ghsales_discount'], true );
+		}
 	}
 
 	/**
@@ -791,6 +830,16 @@ class GHSales_Sale_Engine {
 				// Track this purchase
 				self::track_purchase(
 					intval( $bogo_data['rule_id'] ),
+					intval( $item->get_quantity() )
+				);
+			}
+
+			// Check if this item had regular discount applied
+			$discount_data = $item->get_meta( '_ghsales_discount', true );
+			if ( $discount_data && isset( $discount_data['rule_id'] ) && ! empty( $discount_data['max_quantity'] ) ) {
+				// Track this purchase
+				self::track_purchase(
+					intval( $discount_data['rule_id'] ),
 					intval( $item->get_quantity() )
 				);
 			}
