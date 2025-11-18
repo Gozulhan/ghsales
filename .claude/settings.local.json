@@ -3,7 +3,8 @@
     "allow": [
       "Bash(NUL)",
       "Bash(findstr:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

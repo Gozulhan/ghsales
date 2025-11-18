@@ -152,22 +152,19 @@ GHSales is a comprehensive WordPress/WooCommerce plugin that enables e-commerce 
 - ✅ Original colors restore when event ends or scheme is deactivated
 - ✅ No manual theme editing required
 
-#### 1.3 GDPR Consent Management ⭐ CRITICAL
-**User Story:** As a store owner, I want to comply with GDPR regulations so that I avoid legal penalties and build customer trust.
+#### 1.3 GDPR Consent Management ⭐ REMOVED FROM SCOPE
+**Decision:** GDPR consent will be managed by external cookie consent plugins (Cookiebot, CookieYes, etc.)
 
-**Requirements:**
-- Display consent banner with three categories: Necessary, Analytics, Marketing
-- Cookie consent options: Accept All, Accept Selected, Reject All
-- Log consent decisions with masked IP addresses and timestamps
-- Block tracking scripts until consent is given
-- Provide data export and deletion for user rights
-- Auto-inject banner or shortcode option
+**GHSales Behavior:**
+- GHSales will track by default (no built-in consent banner)
+- Store owners are responsible for configuring their own GDPR consent solution
+- Third-party cookie plugins will control whether GHSales tracking runs
+- No consent_log table needed (handled by external plugin)
 
-**Acceptance Criteria:**
-- ✅ No tracking occurs without consent
-- ✅ Consent log is legally compliant (masked IPs, timestamps)
-- ✅ Users can withdraw consent at any time
-- ✅ Banner is mobile-responsive and accessible
+**Rationale:**
+- Avoids duplication with existing consent management solutions
+- Reduces plugin complexity and maintenance burden
+- Store owners likely already have preferred GDPR solution installed
 
 #### 1.4 User Behavior Tracking ⭐ CRITICAL
 **User Story:** As a store owner, I want to understand customer behavior so that I can show relevant product recommendations.
@@ -178,13 +175,13 @@ GHSales is a comprehensive WordPress/WooCommerce plugin that enables e-commerce 
 - Track search queries (what users search for)
 - Track add-to-cart events
 - Track purchases for conversion data
-- Only track if user has given consent
+- **Tracking runs by default** (consent managed by external cookie plugins)
 
 **Acceptance Criteria:**
 - ✅ Product views are recorded in database
 - ✅ Search queries are captured and stored
-- ✅ No tracking without consent
 - ✅ Data is anonymized (masked IPs)
+- ⚠️ Store owner responsible for GDPR compliance via external consent plugin
 
 #### 1.5 Basic Upsell System ⭐ CRITICAL
 **User Story:** As a store owner, I want to show relevant product recommendations so that I can increase average order value.

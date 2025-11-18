@@ -29,13 +29,6 @@ class GHSales_Core {
 	private static $instance = null;
 
 	/**
-	 * Detected GDPR plugin name (if any)
-	 *
-	 * @var string|null
-	 */
-	private $gdpr_plugin = null;
-
-	/**
 	 * Get singleton instance
 	 * Ensures only one instance of the plugin core exists
 	 *
@@ -55,9 +48,6 @@ class GHSales_Core {
 	 * Initializes plugin components and hooks
 	 */
 	private function __construct() {
-		// Detect GDPR/cookie consent plugins
-		$this->detect_gdpr_plugin();
-
 		// Load plugin components
 		$this->load_components();
 
@@ -75,12 +65,13 @@ class GHSales_Core {
 		// Load i18n (translations)
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-i18n.php';
 
-		// Load GDPR helper
-		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-gdpr.php';
-
 		// Load tracker
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-tracker.php';
 		GHSales_Tracker::init();
+
+		// Load upsell engine
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-upsell.php';
+		GHSales_Upsell::init();
 
 		// Load stats aggregator
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
@@ -97,203 +88,6 @@ class GHSales_Core {
 			GHSales_Event_CPT::init();
 		}
 	}
-
-	/**
-	 * Detect active GDPR/cookie consent plugins
-	 * Checks for popular cookie consent plugins to integrate with
-	 *
-	 * @return void
-	 */
-	private function detect_gdpr_plugin() {
-		// Check for Cookiebot
-		if ( class_exists( 'Cookiebot_WP' ) || is_plugin_active( 'cookiebot/cookiebot.php' ) ) {
-			$this->gdpr_plugin = 'cookiebot';
-			return;
-		}
-
-		// Check for CookieYes (GDPR Cookie Consent)
-		if ( class_exists( 'CookieYes' ) || is_plugin_active( 'cookie-law-info/cookie-law-info.php' ) ) {
-			$this->gdpr_plugin = 'cookieyes';
-			return;
-		}
-
-		// Check for Complianz
-		if ( class_exists( 'COMPLIANZ' ) || is_plugin_active( 'complianz-gdpr/complianz-gdpr.php' ) ) {
-			$this->gdpr_plugin = 'complianz';
-			return;
-		}
-
-		// Check for GDPR Cookie Compliance
-		if ( is_plugin_active( 'gdpr-cookie-compliance/moove-gdpr.php' ) ) {
-			$this->gdpr_plugin = 'moove_gdpr';
-			return;
-		}
-
-		// No GDPR plugin detected - we'll use our own consent banner
-		$this->gdpr_plugin = null;
-	}
-
-	/**
-	 * Get detected GDPR plugin name
-	 *
-	 * @return string|null Plugin identifier or null if none detected
-	 */
-	public function get_gdpr_plugin() {
-		return $this->gdpr_plugin;
-	}
-
-	/**
-	 * Check if user has given consent for analytics tracking
-	 * Integrates with detected GDPR plugin or uses our own consent log
-	 *
-	 * @return bool True if consent given, false otherwise
-	 */
-	public function has_analytics_consent() {
-		// Check based on detected GDPR plugin
-		switch ( $this->gdpr_plugin ) {
-			case 'cookiebot':
-				return $this->check_cookiebot_consent();
-
-			case 'cookieyes':
-				return $this->check_cookieyes_consent();
-
-			case 'complianz':
-				return $this->check_complianz_consent();
-
-			case 'moove_gdpr':
-				return $this->check_moove_gdpr_consent();
-
-			default:
-				// Use our own consent check (will implement in GDPR class)
-				return $this->check_ghsales_consent();
-		}
-	}
-
-	/**
-	 * Check Cookiebot consent status
-	 *
-	 * @return bool
-	 */
-	private function check_cookiebot_consent() {
-		// Cookiebot stores consent in cookie: CookieConsent
-		// Format: {statistics:true, marketing:true, necessary:true}
-		if ( ! isset( $_COOKIE['CookieConsent'] ) ) {
-			return false;
-		}
-
-		// Decode consent cookie
-		$consent = json_decode( stripslashes( $_COOKIE['CookieConsent'] ), true );
-
-		// We need 'statistics' consent for analytics
-		return ! empty( $consent['statistics'] );
-	}
-
-	/**
-	 * Check CookieYes consent status
-	 *
-	 * @return bool
-	 */
-	private function check_cookieyes_consent() {
-		// CookieYes stores consent in cookie: cookieyes-consent
-		// Format: consent:yes, analytics:yes
-		if ( ! isset( $_COOKIE['cookieyes-consent'] ) ) {
-			return false;
-		}
-
-		$consent = $_COOKIE['cookieyes-consent'];
-
-		// Check if analytics category is accepted
-		return strpos( $consent, 'analytics:yes' ) !== false;
-	}
-
-	/**
-	 * Check Complianz consent status
-	 *
-	 * @return bool
-	 */
-	private function check_complianz_consent() {
-		// Complianz stores consent in cookie: complianz_consent_status
-		// Format: {statistics:allow, marketing:allow}
-		if ( ! isset( $_COOKIE['complianz_consent_status'] ) ) {
-			return false;
-		}
-
-		$consent = json_decode( stripslashes( $_COOKIE['complianz_consent_status'] ), true );
-
-		// We need 'statistics' consent
-		return ! empty( $consent['statistics'] ) && $consent['statistics'] === 'allow';
-	}
-
-	/**
-	 * Check Moove GDPR consent status
-	 *
-	 * @return bool
-	 */
-	private function check_moove_gdpr_consent() {
-		// Moove GDPR stores consent in cookie: moove_gdpr_popup
-		// Format: {thirdparty:1, advanced:1}
-		if ( ! isset( $_COOKIE['moove_gdpr_popup'] ) ) {
-			return false;
-		}
-
-		$consent = json_decode( stripslashes( $_COOKIE['moove_gdpr_popup'] ), true );
-
-		// Check for third-party/analytics consent
-		return ! empty( $consent['thirdparty'] );
-	}
-
-	/**
-	 * Check GHSales own consent status
-	 * Falls back to our database consent log
-	 *
-	 * @return bool
-	 */
-	private function check_ghsales_consent() {
-		global $wpdb;
-
-		// Get session ID (WooCommerce session)
-		$session_id = $this->get_session_id();
-		if ( ! $session_id ) {
-			return false;
-		}
-
-		// Check consent log for this session
-		$consent = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT consent_given FROM {$wpdb->prefix}ghsales_consent_log
-				WHERE session_id = %s AND consent_type = 'analytics'
-				ORDER BY consent_date DESC LIMIT 1",
-				$session_id
-			)
-		);
-
-		return ! empty( $consent );
-	}
-
-	/**
-	 * Get current session ID
-	 * Uses WooCommerce session if available, creates fallback session
-	 *
-	 * @return string|null
-	 */
-	private function get_session_id() {
-		// Try WooCommerce session first
-		if ( function_exists( 'WC' ) && WC()->session ) {
-			$customer = WC()->session->get_customer_id();
-			if ( $customer ) {
-				return 'wc_' . $customer;
-			}
-		}
-
-		// Fallback: Use WordPress session or create one
-		if ( ! session_id() ) {
-			// Don't start session here - will be handled by GDPR class
-			return null;
-		}
-
-		return 'wp_' . session_id();
-	}
-
 	/**
 	 * Initialize WordPress hooks
 	 * Sets up actions and filters for plugin functionality
@@ -313,10 +107,6 @@ class GHSales_Core {
 
 		// WooCommerce integration hooks (will be expanded in future phases)
 		add_action( 'woocommerce_init', array( $this, 'init_woocommerce_integration' ) );
-
-		// AJAX hooks (for future features)
-		add_action( 'wp_ajax_ghsales_save_consent', array( $this, 'ajax_save_consent' ) );
-		add_action( 'wp_ajax_nopriv_ghsales_save_consent', array( $this, 'ajax_save_consent' ) );
 	}
 
 	/**
@@ -369,13 +159,7 @@ class GHSales_Core {
 					<?php esc_html_e( 'Database tables have been created. The admin interface will be built in the next development phase.', 'ghsales' ); ?>
 				</p>
 				<p>
-					<?php
-					printf(
-						/* translators: %s: Detected GDPR plugin name or 'None' */
-						esc_html__( 'Detected GDPR Plugin: %s', 'ghsales' ),
-						'<code>' . ( $this->gdpr_plugin ? esc_html( $this->gdpr_plugin ) : esc_html__( 'None (will use built-in banner)', 'ghsales' ) ) . '</code>'
-					);
-					?>
+					<?php esc_html_e( 'Note: GDPR consent is managed by external cookie plugins (Cookiebot, CookieYes, etc.). GHSales tracks by default.', 'ghsales' ); ?>
 				</p>
 			</div>
 
@@ -416,7 +200,7 @@ class GHSales_Core {
 			'ghsales_user_activity'  => __( 'User Activity', 'ghsales' ),
 			'ghsales_product_stats'  => __( 'Product Stats', 'ghsales' ),
 			'ghsales_upsell_cache'   => __( 'Upsell Cache', 'ghsales' ),
-			'ghsales_consent_log'    => __( 'Consent Log', 'ghsales' ),
+			'ghsales_purchase_limits' => __( 'Purchase Limits', 'ghsales' ),
 		);
 
 		echo '<table class="widefat striped">';
@@ -490,11 +274,24 @@ class GHSales_Core {
 	 * @return void
 	 */
 	public function enqueue_frontend_assets() {
-		// Frontend CSS (will create in future phase)
-		// wp_enqueue_style( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/css/ghsales-frontend.css', array(), GHSALES_VERSION );
+		// Upsell styles
+		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array(), GHSALES_VERSION );
+
+		// Upsell JavaScript (AJAX add-to-cart)
+		wp_enqueue_script( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/js/ghsales-upsells.js', array( 'jquery', 'wc-add-to-cart' ), GHSALES_VERSION, true );
 
 		// Frontend JS for BOGO quantity display in mini cart
 		wp_enqueue_script( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/js/ghsales-frontend.js', array( 'jquery' ), GHSALES_VERSION, true );
+
+		// Localize script for AJAX
+		wp_localize_script(
+			'ghsales-upsells',
+			'ghsales_upsell_params',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'ghsales_upsell_nonce' ),
+			)
+		);
 
 		// Enqueue translations to JavaScript
 		GHSales_i18n::enqueue_js_translations();
@@ -668,17 +465,6 @@ class GHSales_Core {
 		}
 
 		return $colors;
-	}
-
-	/**
-	 * AJAX handler for saving user consent
-	 * Processes consent choices from banner
-	 *
-	 * @return void
-	 */
-	public function ajax_save_consent() {
-		// Will be implemented in GDPR class (future phase)
-		wp_send_json_error( array( 'message' => 'Not implemented yet' ) );
 	}
 
 	/**

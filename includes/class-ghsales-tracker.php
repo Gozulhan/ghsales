@@ -5,7 +5,7 @@
  * Tracks user behavior for personalization and analytics.
  * Tracks: product views, category browsing, searches, add-to-cart, purchases.
  *
- * ALWAYS checks GDPR consent before tracking.
+ * Tracks by default without consent checks (external plugins handle consent).
  *
  * @package GHSales
  * @since 1.0.0
@@ -53,11 +53,6 @@ class GHSales_Tracker {
 	 * @return void
 	 */
 	public static function track_product_view() {
-		// Check GDPR consent
-		if ( ! GHSales_GDPR::should_track() ) {
-			return;
-		}
-
 		// Get current product ID
 		$product_id = get_the_ID();
 
@@ -89,11 +84,6 @@ class GHSales_Tracker {
 	 * @return void
 	 */
 	public static function track_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
-		// Check GDPR consent
-		if ( ! GHSales_GDPR::should_track() ) {
-			return;
-		}
-
 		// Use variation ID if available, otherwise product ID
 		$tracked_product_id = $variation_id > 0 ? $variation_id : $product_id;
 
@@ -120,11 +110,6 @@ class GHSales_Tracker {
 	 * @return void
 	 */
 	public static function track_purchase( $order_id ) {
-		// Check GDPR consent
-		if ( ! GHSales_GDPR::should_track() ) {
-			return;
-		}
-
 		// Get order
 		$order = wc_get_order( $order_id );
 
@@ -170,11 +155,6 @@ class GHSales_Tracker {
 			return;
 		}
 
-		// Check GDPR consent
-		if ( ! GHSales_GDPR::should_track() ) {
-			return;
-		}
-
 		// Get search query
 		$search_query = $query->get( 's' );
 
@@ -198,11 +178,6 @@ class GHSales_Tracker {
 	 * @return void
 	 */
 	public static function track_category_view() {
-		// Check GDPR consent
-		if ( ! GHSales_GDPR::should_track() ) {
-			return;
-		}
-
 		// Check if we're on a category page
 		if ( ! is_product_category() ) {
 			return;
@@ -236,16 +211,15 @@ class GHSales_Tracker {
 
 		// Prepare activity record
 		$activity = array(
-			'session_id'     => GHSales_GDPR::get_session_id(),
-			'user_id'        => GHSales_GDPR::get_user_id(),
+			'session_id'     => self::get_session_id(),
+			'user_id'        => self::get_user_id(),
 			'activity_type'  => $activity_type,
 			'product_id'     => isset( $data['product_id'] ) ? absint( $data['product_id'] ) : null,
 			'category_id'    => isset( $data['category_id'] ) ? absint( $data['category_id'] ) : null,
 			'search_query'   => isset( $data['search_query'] ) ? sanitize_text_field( $data['search_query'] ) : null,
 			'meta_data'      => isset( $data['meta_data'] ) ? $data['meta_data'] : null,
-			'ip_address'     => GHSales_GDPR::mask_ip( GHSales_GDPR::get_ip_address() ),
-			'user_agent'     => GHSales_GDPR::get_user_agent(),
-			'consent_given'  => 1, // We only track if consent is given
+			'ip_address'     => self::mask_ip( self::get_ip_address() ),
+			'user_agent'     => self::get_user_agent(),
 			'timestamp'      => current_time( 'mysql' ),
 		);
 
@@ -253,7 +227,7 @@ class GHSales_Tracker {
 		$result = $wpdb->insert(
 			$wpdb->prefix . 'ghsales_user_activity',
 			$activity,
-			array( '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s' )
+			array( '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( $result ) {
@@ -427,5 +401,103 @@ class GHSales_Tracker {
 			),
 			ARRAY_A
 		);
+	}
+
+	/**
+	 * Get WooCommerce session ID
+	 * Returns unique identifier for tracking guest users
+	 *
+	 * @return string Session ID
+	 */
+	public static function get_session_id() {
+		// Try WooCommerce session first
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$session_id = WC()->session->get_customer_id();
+			if ( $session_id ) {
+				return $session_id;
+			}
+		}
+
+		// Fallback to WordPress session cookie
+		if ( isset( $_COOKIE['wp_woocommerce_session_'] ) ) {
+			return sanitize_text_field( $_COOKIE['wp_woocommerce_session_'] );
+		}
+
+		// Last resort: generate unique ID based on IP and user agent
+		return 'guest_' . md5( self::get_ip_address() . self::get_user_agent() );
+	}
+
+	/**
+	 * Get current user ID
+	 * Returns WordPress user ID or null for guests
+	 *
+	 * @return int|null User ID or null
+	 */
+	private static function get_user_id() {
+		$user_id = get_current_user_id();
+		return $user_id > 0 ? $user_id : null;
+	}
+
+	/**
+	 * Get user's IP address
+	 * Checks various headers for proxy/CDN scenarios
+	 *
+	 * @return string IP address
+	 */
+	private static function get_ip_address() {
+		// Check for proxy headers (in order of reliability)
+		$headers = array(
+			'HTTP_CF_CONNECTING_IP', // Cloudflare
+			'HTTP_X_REAL_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'REMOTE_ADDR',
+		);
+
+		foreach ( $headers as $header ) {
+			if ( ! empty( $_SERVER[ $header ] ) ) {
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				// For X-Forwarded-For, take the first IP
+				if ( strpos( $ip, ',' ) !== false ) {
+					$ip = trim( explode( ',', $ip )[0] );
+				}
+				return $ip;
+			}
+		}
+
+		return '0.0.0.0';
+	}
+
+	/**
+	 * Mask IP address for GDPR compliance
+	 * Removes last octet of IPv4 or last 80 bits of IPv6
+	 *
+	 * @param string $ip IP address to mask
+	 * @return string Masked IP address
+	 */
+	private static function mask_ip( $ip ) {
+		// IPv6 check
+		if ( strpos( $ip, ':' ) !== false ) {
+			// For IPv6, mask last 80 bits (keep first 48 bits)
+			$parts = explode( ':', $ip );
+			return implode( ':', array_slice( $parts, 0, 3 ) ) . '::0';
+		}
+
+		// IPv4 - mask last octet
+		$parts = explode( '.', $ip );
+		if ( count( $parts ) === 4 ) {
+			$parts[3] = '0';
+			return implode( '.', $parts );
+		}
+
+		return $ip;
+	}
+
+	/**
+	 * Get user agent string
+	 *
+	 * @return string User agent
+	 */
+	private static function get_user_agent() {
+		return isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 	}
 }

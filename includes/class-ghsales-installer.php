@@ -153,7 +153,6 @@ class GHSales_Installer {
 			meta_data LONGTEXT NULL,
 			ip_address VARCHAR(45) NULL,
 			user_agent TEXT NULL,
-			consent_given TINYINT(1) NOT NULL DEFAULT 0,
 			timestamp DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY idx_session (session_id),
@@ -203,25 +202,7 @@ class GHSales_Installer {
 		) $charset_collate;";
 
 		/**
-		 * Table 7: Consent Log
-		 * GDPR compliance - log user consent decisions
-		 */
-		$sql[] = "CREATE TABLE {$wpdb->prefix}ghsales_consent_log (
-			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			session_id VARCHAR(100) NOT NULL,
-			user_id BIGINT UNSIGNED NULL,
-			consent_type VARCHAR(50) NOT NULL,
-			consent_given TINYINT(1) NOT NULL,
-			ip_address VARCHAR(45) NULL,
-			consent_date DATETIME NOT NULL,
-			PRIMARY KEY (id),
-			KEY idx_session (session_id),
-			KEY idx_user (user_id),
-			KEY idx_consent_type (consent_type)
-		) $charset_collate;";
-
-		/**
-		 * Table 8: Purchase Limits
+		 * Table 7: Purchase Limits
 		 * Track purchase limits per customer for sale rules
 		 */
 		$sql[] = "CREATE TABLE {$wpdb->prefix}ghsales_purchase_limits (
@@ -381,7 +362,6 @@ class GHSales_Installer {
 		// Delete all plugin tables
 		$tables = array(
 			'ghsales_purchase_limits',
-			'ghsales_consent_log',
 			'ghsales_upsell_cache',
 			'ghsales_user_activity',
 			'ghsales_product_stats',

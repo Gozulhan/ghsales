@@ -56,6 +56,9 @@ class GHSales_Sale_Engine {
 		// Show sale badges on product pages
 		add_filter( 'woocommerce_sale_flash', array( __CLASS__, 'custom_sale_badge' ), 10, 3 );
 
+		// Modify product display prices to show GHSales discounts
+		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'modify_price_display' ), 10, 2 );
+
 		// Display limit reached message
 		add_filter( 'woocommerce_cart_item_name', array( __CLASS__, 'display_limit_message' ), 20, 3 );
 
@@ -655,6 +658,63 @@ class GHSales_Sale_Engine {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Modify product display prices to show GHSales discounts
+	 *
+	 * This makes GHSales discounts visible on product cards/loops, not just in cart
+	 *
+	 * @param string $price_html The price HTML
+	 * @param WC_Product $product Product object
+	 * @return string Modified price HTML
+	 */
+	public static function modify_price_display( $price_html, $product ) {
+		// Only modify on frontend, not in cart or admin
+		if ( is_admin() || is_cart() || is_checkout() ) {
+			return $price_html;
+		}
+
+		// Safety check - ensure we have a valid product object
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return $price_html;
+		}
+
+		$product_id = $product->get_id();
+		$active_events = self::get_active_events();
+
+		// Check for BOGO first - BOGO doesn't change displayed price, just adds free items
+		$bogo_rule = self::find_bogo_rule( $product_id, $active_events );
+		if ( $bogo_rule ) {
+			// For BOGO, keep original price display - the value is in the free items
+			return $price_html;
+		}
+
+		// Check for regular discount (percentage or fixed)
+		$current_price = floatval( $product->get_price() );
+		$discount = self::find_best_discount( $product_id, $active_events, $current_price );
+
+		if ( $discount ) {
+			// Calculate the original price (before GHSales discount)
+			$original_price = floatval( $product->get_regular_price() );
+
+			// If product already has WC sale, use current price as base
+			if ( $product->is_on_sale() && $original_price > $current_price ) {
+				$original_price = $current_price;
+			}
+
+			// Calculate GHSales discounted price
+			$discounted_price = self::calculate_discounted_price( $original_price, $discount );
+
+			// Format the price HTML with strikethrough original and discounted price
+			$price_html = sprintf(
+				'<del aria-hidden="true">%s</del> <ins aria-hidden="true">%s</ins>',
+				wc_price( $original_price ),
+				wc_price( $discounted_price )
+			);
+		}
+
+		return $price_html;
 	}
 
 	/**

@@ -72,7 +72,6 @@
 │     meta_data          LONGTEXT     │   │
 │     ip_address         VARCHAR(45)  │   │
 │     user_agent         TEXT         │   │
-│     consent_given      TINYINT(1)   │   │
 │     timestamp          DATETIME     │   │
 └─────────────────────────────────────┘   │
                                            │
@@ -391,49 +390,17 @@ INSERT INTO wp_ghsales_upsell_cache VALUES (
 ---
 
 ### 7. wp_ghsales_consent_log
-**Purpose:** GDPR compliance - log user consent decisions
+**Status:** ⚠️ **REMOVED FROM IMPLEMENTATION**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | BIGINT UNSIGNED | PK, AUTO_INCREMENT | Unique log entry |
-| session_id | VARCHAR(100) | NOT NULL | Session identifier |
-| user_id | BIGINT UNSIGNED | NULL | User ID (if logged in) |
-| consent_type | VARCHAR(50) | NOT NULL | Type: 'analytics', 'marketing', 'tracking' |
-| consent_given | TINYINT(1) | NOT NULL | 1 = consented, 0 = rejected |
-| ip_address | VARCHAR(45) | NULL | Masked IP address (GDPR compliant) |
-| consent_date | DATETIME | NOT NULL | When consent was given/rejected |
+**Reason:** GDPR consent is managed by external cookie consent plugins (Cookiebot, CookieYes, etc.)
 
-**Indexes:**
-- PRIMARY KEY (id)
-- INDEX idx_session (session_id)
-- INDEX idx_user (user_id)
+**Decision:**
+- GHSales tracks by default (no consent checks in code)
+- Store owners must install and configure their own GDPR consent solution
+- External cookie plugins will control whether GHSales tracking executes
+- No consent log table needed in GHSales database
 
-**Legal Requirement:**
-- Must be retained for proof of consent
-- Must allow data export for user rights (GDPR Article 20)
-
-**Sample Data:**
-```sql
-INSERT INTO wp_ghsales_consent_log VALUES (
-    1,
-    'wc_session_abc123',
-    NULL,
-    'analytics',
-    1, -- Consent given
-    '192.168.1.0', -- Masked
-    '2025-01-18 14:00:00'
-);
-
-INSERT INTO wp_ghsales_consent_log VALUES (
-    2,
-    'wc_session_abc123',
-    NULL,
-    'marketing',
-    0, -- Consent rejected
-    '192.168.1.0',
-    '2025-01-18 14:00:00'
-);
-```
+**Note:** This table definition is preserved for documentation purposes only and will NOT be created during plugin installation.
 
 ---
 

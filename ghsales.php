@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GH Sales
  * Plugin URI: https://gulcanhome.eu
- * Description: Comprehensive WordPress/WooCommerce plugin for sales event management, intelligent upselling, and sitewide visual theming with GDPR-compliant user tracking.
+ * Description: Comprehensive WordPress/WooCommerce plugin for sales event management, intelligent upselling, and sitewide visual theming with user tracking.
  * Version: 1.0.0
  * Requires at least: 5.8
  * Requires PHP: 7.4

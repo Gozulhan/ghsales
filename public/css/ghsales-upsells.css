@@ -1,0 +1,329 @@
+/**
+ * GHSales Upsell Styles
+ *
+ * Styling for upsell product recommendations in cart and product pages
+ *
+ * @package GHSales
+ * @since 1.0.0
+ */
+
+/* Cart Upsells (Mini Cart) */
+.ghsales-cart-upsells {
+	padding: 15px;
+	background: #f9f9f9;
+	border-top: 1px solid #ddd;
+}
+
+.ghsales-upsells-title {
+	font-size: 16px;
+	font-weight: 600;
+	margin: 0 0 15px 0;
+	color: #333;
+	text-align: center;
+}
+
+.ghsales-upsells-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+/* Product Page Upsells */
+.ghsales-product-upsells {
+	margin: 40px 0;
+	padding: 30px 0;
+	border-top: 1px solid #e0e0e0;
+}
+
+.ghsales-product-upsells h2 {
+	font-size: 24px;
+	font-weight: 700;
+	margin: 0 0 25px 0;
+	text-align: center;
+	color: #333;
+}
+
+.ghsales-upsells-carousel {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 20px;
+}
+
+/* Upsell Product Card */
+.ghsales-upsell-card {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	overflow: hidden;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	display: flex;
+	flex-direction: column;
+}
+
+.ghsales-upsell-card:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ghsales-upsell-image {
+	display: block;
+	position: relative;
+	padding-top: 100%; /* 1:1 aspect ratio */
+	overflow: hidden;
+	background: #f5f5f5;
+}
+
+.ghsales-upsell-image img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.3s ease;
+}
+
+.ghsales-upsell-card:hover .ghsales-upsell-image img {
+	transform: scale(1.05);
+}
+
+.ghsales-upsell-details {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+}
+
+.ghsales-upsell-title {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.3;
+	flex-grow: 1;
+}
+
+.ghsales-upsell-title a {
+	color: #333;
+	text-decoration: none;
+	transition: color 0.2s ease;
+}
+
+.ghsales-upsell-title a:hover {
+	color: #000;
+}
+
+.ghsales-upsell-price {
+	display: block;
+	font-size: 16px;
+	font-weight: 700;
+	color: #000;
+	margin-bottom: 10px;
+}
+
+.ghsales-upsell-price del {
+	color: #999;
+	font-weight: 400;
+	font-size: 14px;
+	margin-right: 5px;
+}
+
+.ghsales-upsell-price ins {
+	text-decoration: none;
+	color: #e74c3c;
+}
+
+.ghsales-upsell-add-to-cart {
+	width: 100%;
+	padding: 10px 15px;
+	background: #000;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.ghsales-upsell-add-to-cart:hover {
+	background: #333;
+}
+
+.ghsales-upsell-add-to-cart:disabled {
+	background: #ccc;
+	cursor: not-allowed;
+}
+
+.ghsales-upsell-add-to-cart.loading {
+	position: relative;
+	color: transparent;
+}
+
+.ghsales-upsell-add-to-cart.loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid #fff;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: ghsales-spin 0.6s linear infinite;
+}
+
+@keyframes ghsales-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* No upsells message */
+.ghsales-no-upsells {
+	text-align: center;
+	color: #999;
+	font-size: 14px;
+	padding: 20px;
+	margin: 0;
+}
+
+/* Shortcode-specific styles */
+.ghsales-upsells-shortcode {
+	margin: 40px 0;
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-title {
+	font-size: 28px;
+	font-weight: 700;
+	margin: 0 0 30px 0;
+	text-align: center;
+	color: #333;
+}
+
+/* Column layout for shortcodes */
+.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="2"] {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="3"] {
+	grid-template-columns: repeat(3, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="4"] {
+	grid-template-columns: repeat(4, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="5"] {
+	grid-template-columns: repeat(5, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="6"] {
+	grid-template-columns: repeat(6, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="2"] {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="3"] {
+	grid-template-columns: repeat(3, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="4"] {
+	grid-template-columns: repeat(4, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="5"] {
+	grid-template-columns: repeat(5, 1fr);
+}
+
+.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="6"] {
+	grid-template-columns: repeat(6, 1fr);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+	.ghsales-upsells-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 10px;
+	}
+
+	.ghsales-cart-upsells {
+		padding: 12px;
+	}
+
+	.ghsales-upsells-title {
+		font-size: 14px;
+		margin-bottom: 12px;
+	}
+
+	.ghsales-upsells-carousel {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 15px;
+	}
+
+	/* Shortcodes on tablet - reduce columns */
+	.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="5"],
+	.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="6"],
+	.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="5"],
+	.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="6"] {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.ghsales-upsells-shortcode .ghsales-upsells-grid[data-columns="4"],
+	.ghsales-upsells-shortcode .ghsales-upsells-carousel[data-columns="4"] {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.ghsales-product-upsells {
+		margin: 30px 0;
+		padding: 20px 0;
+	}
+
+	.ghsales-product-upsells h2 {
+		font-size: 20px;
+		margin-bottom: 20px;
+	}
+
+	.ghsales-upsell-title {
+		font-size: 13px;
+	}
+
+	.ghsales-upsell-price {
+		font-size: 14px;
+	}
+
+	.ghsales-upsell-add-to-cart {
+		padding: 8px 12px;
+		font-size: 12px;
+	}
+}
+
+@media (max-width: 480px) {
+	.ghsales-upsell-details {
+		padding: 10px;
+	}
+
+	.ghsales-upsell-title {
+		font-size: 12px;
+		margin-bottom: 6px;
+	}
+
+	.ghsales-upsell-price {
+		font-size: 13px;
+		margin-bottom: 8px;
+	}
+
+	/* All shortcodes become 2 columns on mobile */
+	.ghsales-upsells-shortcode .ghsales-upsells-grid,
+	.ghsales-upsells-shortcode .ghsales-upsells-carousel {
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 10px;
+	}
+
+	.ghsales-upsells-shortcode .ghsales-upsells-title {
+		font-size: 20px;
+		margin-bottom: 20px;
+	}
+}
