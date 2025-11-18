@@ -297,6 +297,7 @@ class GHSales_Core {
 		// Enqueue gulcan mobile product card styles
 		$gulcan_mobile_path = WP_PLUGIN_DIR . '/gulcan-plugins/public/css/gulcan-mobile-product-cards.css';
 		$gulcan_mobile_url = plugins_url( 'gulcan-plugins/public/css/gulcan-mobile-product-cards.css' );
+		$has_gulcan_mobile = false;
 		if ( file_exists( $gulcan_mobile_path ) ) {
 			wp_enqueue_style(
 				'gulcan-mobile-product-cards',
@@ -304,12 +305,15 @@ class GHSales_Core {
 				array( 'gulcan-wc-products-public' ),
 				filemtime( $gulcan_mobile_path )
 			);
+			$has_gulcan_mobile = true;
 		}
 
 		// Upsell styles with cache busting
+		// Dependencies: only include gulcan styles if they exist, otherwise just swiper
 		$upsells_css_path = GHSALES_PLUGIN_DIR . 'public/css/ghsales-upsells.css';
 		$upsells_css_version = file_exists( $upsells_css_path ) ? filemtime( $upsells_css_path ) : GHSALES_VERSION;
-		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array( 'gulcan-mobile-product-cards' ), $upsells_css_version );
+		$upsells_dependencies = $has_gulcan_mobile ? array( 'gulcan-mobile-product-cards' ) : array( 'swiper' );
+		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', $upsells_dependencies, $upsells_css_version );
 
 		// Enqueue Swiper JS (required for minicart upsells carousel)
 		wp_enqueue_script(
