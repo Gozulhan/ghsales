@@ -53,8 +53,6 @@ jQuery(document).ready(function($) {
         var value = $this.val();
         var $targetSelector = $('.ghsales-target-selector[data-index="' + index + '"]');
 
-        console.log('Applies To changed - Index:', index, 'Value:', value);
-
         if (value === 'all') {
             // Hide target selector for "All Products"
             $targetSelector.hide();
@@ -79,35 +77,29 @@ jQuery(document).ready(function($) {
             // Show loading message
             $targetSelector.find('.ghsales-target-content').html('<p>Loading...</p>');
 
-            var ajaxData = {
-                action: 'ghsales_load_target_selector',
-                applies_to: value,
-                index: index,
-                nonce: ghsalesAdmin.nonce
-            };
-
-            console.log('Sending AJAX request with data:', ajaxData);
-
             // Load the correct selector via AJAX
             $.ajax({
                 url: ghsalesAdmin.ajaxurl,
                 type: 'POST',
-                data: ajaxData,
+                data: {
+                    action: 'ghsales_load_target_selector',
+                    applies_to: value,
+                    index: index,
+                    nonce: ghsalesAdmin.nonce
+                },
                 success: function(response) {
-                    console.log('AJAX Response:', response);
                     if (response.success) {
                         $targetSelector.find('.ghsales-target-content').html(response.data.html);
                         // Re-initialize Select2 for the new dropdown
                         initializeSelect2();
                     } else {
-                        console.error('AJAX Error:', response);
                         var errorMsg = response.data && response.data.message ? response.data.message : 'Error loading options.';
                         $targetSelector.find('.ghsales-target-content').html('<p>' + errorMsg + '</p>');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('AJAX Request Failed:', status, error, xhr.responseText);
-                    $targetSelector.find('.ghsales-target-content').html('<p>Error loading options. Check console for details.</p>');
+                    console.error('AJAX selector load failed:', status, error);
+                    $targetSelector.find('.ghsales-target-content').html('<p>Error loading options.</p>');
                 }
             });
         }

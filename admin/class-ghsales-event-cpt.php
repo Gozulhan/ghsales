@@ -661,13 +661,8 @@ class GHSales_Event_CPT {
 	 * @return void
 	 */
 	public static function ajax_load_target_selector() {
-		// Log the AJAX request for debugging
-		error_log( 'GHSales AJAX: Load target selector called' );
-		error_log( 'POST data: ' . print_r( $_POST, true ) );
-
 		// Verify nonce for security
 		if ( ! check_ajax_referer( 'ghsales_admin_nonce', 'nonce', false ) ) {
-			error_log( 'GHSales AJAX: Nonce verification failed' );
 			wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page.', 'ghsales' ) ) );
 		}
 
@@ -677,7 +672,6 @@ class GHSales_Event_CPT {
 
 		// Validate parameters (note: index can be 0, so check for null/empty string specifically)
 		if ( empty( $applies_to ) || ! isset( $_POST['index'] ) || $index === '' ) {
-			error_log( 'GHSales AJAX: Invalid parameters - applies_to: ' . $applies_to . ', index: ' . var_export( $index, true ) );
 			wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'ghsales' ) ) );
 		}
 
@@ -687,14 +681,12 @@ class GHSales_Event_CPT {
 			self::render_target_selector( $applies_to, '', $index );
 			$html = ob_get_clean();
 
-			error_log( 'GHSales AJAX: Successfully generated HTML (length: ' . strlen( $html ) . ')' );
-
 			// Return the HTML
 			wp_send_json_success( array( 'html' => $html ) );
 		} catch ( Exception $e ) {
 			ob_end_clean();
-			error_log( 'GHSales AJAX: Error - ' . $e->getMessage() );
-			wp_send_json_error( array( 'message' => __( 'Error generating selector: ', 'ghsales' ) . $e->getMessage() ) );
+			error_log( 'GHSales AJAX Error: ' . $e->getMessage() );
+			wp_send_json_error( array( 'message' => __( 'Error generating selector. Check error log.', 'ghsales' ) ) );
 		}
 	}
 }
