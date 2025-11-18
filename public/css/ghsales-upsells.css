@@ -16,7 +16,7 @@
 	background: #fff;
 	border-radius: 12px;
 	padding: 1rem 1.25rem;
-	margin: 0 1.5rem 1.5rem;
+	margin: 0 0 1.5rem 0; /* Remove horizontal margin - parent handles it */
 }
 
 .ghsales-special-sales-title {
@@ -40,12 +40,23 @@
 	color: #333;
 }
 
+/* Sale section container - handles padding */
+.ghminicart-sale-section {
+	padding: 0 1.5rem;
+}
+
+/* Empty cart sale wrapper */
+.ghminicart-empty-sale-wrapper .ghminicart-sale-section {
+	padding: 0 1.5rem;
+	margin-top: 2rem;
+}
+
 /* ========================================
    UPSELLS SECTION (Below special sales)
    ======================================== */
 
 .ghsales-cart-upsells-section {
-	padding: 0 1.5rem;
+	padding: 0; /* No padding - parent handles it */
 	margin-bottom: 1.5rem;
 }
 
@@ -82,13 +93,22 @@
    ======================================== */
 
 @media (max-width: 768px) {
+	/* Mobile padding for sale section container */
+	.ghminicart-sale-section {
+		padding: 0 0.875rem;
+	}
+
+	.ghminicart-empty-sale-wrapper .ghminicart-sale-section {
+		padding: 0 0.875rem;
+	}
+
 	.ghsales-special-sales-section {
-		margin: 0 0.875rem 1rem;
+		margin: 0 0 1rem 0;
 		padding: 0.875rem 1rem;
 	}
 
 	.ghsales-cart-upsells-section {
-		padding: 0 0.875rem;
+		padding: 0;
 		margin-bottom: 1rem;
 	}
 
