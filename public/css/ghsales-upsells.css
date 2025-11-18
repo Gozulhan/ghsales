@@ -106,7 +106,7 @@ body .ghsales-special-sales-section h3.ghsales-special-sales-title,
 
 .ghsales-special-sales-section {
 	padding: 1rem 1.25rem;
-	margin: 0 1.5rem 1.5rem; /* Add horizontal margin back */
+	margin: 0 0 1.5rem 0; /* Bottom margin only */
 }
 
 /* ========================================
@@ -166,7 +166,7 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
 
 	/* Special sales section - mobile margin and padding */
 	.ghsales-special-sales-section {
-		margin: 0 0.875rem 1rem 0.875rem; /* Mobile horizontal margin */
+		margin: 0 0 1rem 0; /* Bottom margin only */
 		padding: 0.875rem 1rem;
 	}
 
