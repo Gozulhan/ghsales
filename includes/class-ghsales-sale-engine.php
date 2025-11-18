@@ -595,10 +595,58 @@ class GHSales_Sale_Engine {
 
 		// Check if product has active sale
 		$active_events = self::get_active_events();
-		$discount = self::find_best_discount( $product_id, $active_events, $product->get_price() );
 
+		// First check for BOGO
+		$bogo_rule = self::find_bogo_rule( $product_id, $active_events );
+		if ( $bogo_rule ) {
+			// Get translated BOGO badge text
+			$badge_text = sprintf(
+				GHSales_i18n::get( 'bogo_badge', '1+%d FREE' ),
+				1,
+				intval( $bogo_rule['free_items'] )
+			);
+			return '<span class="onsale ghsales-badge ghsales-bogo-product-badge">' . esc_html( $badge_text ) . '</span>';
+		}
+
+		// Check for regular discount
+		$discount = self::find_best_discount( $product_id, $active_events, $product->get_price() );
 		if ( $discount ) {
-			return '<span class="onsale ghsales-badge">' . esc_html( $discount['event_name'] ) . '</span>';
+			// Get the event post to retrieve badge display setting
+			$badge_display = 'percentage'; // Default
+			foreach ( $active_events as $event ) {
+				if ( $event->post_title === $discount['event_name'] ) {
+					$badge_display = get_post_meta( $event->ID, '_ghsales_badge_display', true );
+					if ( empty( $badge_display ) ) {
+						$badge_display = 'percentage';
+					}
+					break;
+				}
+			}
+
+			// Calculate original and discounted prices
+			$original_price = floatval( $product->get_regular_price() );
+			$current_price = floatval( $product->get_price() );
+
+			// If product already has WC sale, use that as original
+			if ( $product->is_on_sale() && $original_price > $current_price ) {
+				$original_price = $current_price;
+			}
+
+			$discounted_price = self::calculate_discounted_price( $original_price, $discount );
+			$amount_saved = $original_price - $discounted_price;
+			$percentage_saved = $original_price > 0 ? round( ( $amount_saved / $original_price ) * 100 ) : 0;
+
+			// Build badge text based on setting
+			$badge_text = '';
+			if ( $badge_display === 'percentage' ) {
+				$badge_text = '-' . $percentage_saved . '%';
+			} elseif ( $badge_display === 'amount' ) {
+				$badge_text = '-' . strip_tags( wc_price( $amount_saved ) );
+			} elseif ( $badge_display === 'both' ) {
+				$badge_text = '-' . $percentage_saved . '% / -' . strip_tags( wc_price( $amount_saved ) );
+			}
+
+			return '<span class="onsale ghsales-badge ghsales-discount-product-badge">' . esc_html( $badge_text ) . '</span>';
 		}
 
 		return $html;
