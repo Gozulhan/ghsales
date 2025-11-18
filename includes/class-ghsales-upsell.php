@@ -803,34 +803,37 @@ class GHSales_Upsell {
 			// Get products from this event's rules
 			if ( ! empty( $event->rules ) ) {
 				foreach ( $event->rules as $rule ) {
-					error_log( 'GHSales Special Sales: Rule found - type: ' . $rule->discount_type );
+					error_log( 'GHSales Special Sales: Rule found - type: ' . $rule->rule_type . ', applies_to: ' . $rule->applies_to );
+					error_log( 'GHSales Special Sales: target_ids = ' . $rule->target_ids );
 
-					// Get product IDs from the rule
-					$product_ids = ! empty( $rule->product_ids ) ? explode( ',', $rule->product_ids ) : array();
-					$category_ids = ! empty( $rule->category_ids ) ? explode( ',', $rule->category_ids ) : array();
+					// Get target IDs from the rule
+					$target_ids = ! empty( $rule->target_ids ) ? explode( ',', $rule->target_ids ) : array();
+					$target_ids = array_map( 'intval', array_filter( $target_ids ) );
 
-					error_log( 'GHSales Special Sales: product_ids = ' . $rule->product_ids );
-					error_log( 'GHSales Special Sales: category_ids = ' . $rule->category_ids );
+					if ( empty( $target_ids ) ) {
+						error_log( 'GHSales Special Sales: No target IDs found in rule' );
+						continue;
+					}
 
-					// Get products by IDs
-					if ( ! empty( $product_ids ) ) {
-						foreach ( $product_ids as $product_id ) {
-							$product = wc_get_product( (int) $product_id );
+					// Get products based on applies_to field
+					if ( $rule->applies_to === 'products' ) {
+						// Get products by IDs
+						foreach ( $target_ids as $product_id ) {
+							$product = wc_get_product( $product_id );
 							if ( $product && $product->is_in_stock() ) {
 								$sale_products[ $product_id ] = array(
 									'product'    => $product,
 									'event_name' => $event->post_title,
 								);
+								error_log( 'GHSales Special Sales: Added product ID ' . $product_id . ' - ' . $product->get_name() );
 							}
 						}
-					}
-
-					// Get products by categories
-					if ( ! empty( $category_ids ) ) {
+					} elseif ( $rule->applies_to === 'categories' ) {
+						// Get products by categories
 						$args = array(
-							'status'      => 'publish',
-							'category'    => $category_ids,
-							'limit'       => 4,
+							'status'       => 'publish',
+							'category'     => $target_ids,
+							'limit'        => 4,
 							'stock_status' => 'instock',
 						);
 						$products = wc_get_products( $args );
@@ -839,7 +842,13 @@ class GHSales_Upsell {
 								'product'    => $product,
 								'event_name' => $event->post_title,
 							);
+							error_log( 'GHSales Special Sales: Added product from category - ' . $product->get_name() );
 						}
+					}
+
+					// Stop if we have enough products
+					if ( count( $sale_products ) >= 4 ) {
+						break 2;
 					}
 				}
 			}
