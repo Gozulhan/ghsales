@@ -6,6 +6,13 @@
 
 jQuery(document).ready(function($) {
 
+    // Get translation helper
+    function t(key, defaultValue) {
+        return (typeof ghsalesTranslations !== 'undefined' && ghsalesTranslations[key])
+            ? ghsalesTranslations[key]
+            : defaultValue;
+    }
+
     // Add BOGO quantity info to mini cart items
     function addBogoQuantityInfo() {
         // Find all mini cart items
@@ -33,8 +40,13 @@ jQuery(document).ready(function($) {
                     'style': 'font-size: 12px; color: var(--color-cp-gray-200, #666); margin-bottom: 4px;'
                 });
 
+                // Use translations for "betaald" and "gratis"
+                var paidText = t('paid', 'betaald');
+                var freeText = t('free', 'gratis').toLowerCase();
+                var andText = t('and', '+');
+
                 $bogoQtyDiv.html(
-                    paidQty + ' betaald + ' + (paidQty * freePerPaid) + ' gratis'
+                    paidQty + ' ' + paidText + ' ' + andText + ' ' + (paidQty * freePerPaid) + ' ' + freeText
                 );
 
                 // Insert BEFORE the quantity controls (directly above)

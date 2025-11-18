@@ -1,0 +1,9 @@
+{
+  "free": "FREE",
+  "paid": "paid",
+  "and": "+",
+  "bogo_badge": "%d+%d FREE",
+  "sale": "Sale",
+  "sale_limit_reached": "Sale limit reached: Maximum %d items per customer",
+  "sale_limit_remaining": "Sale limit: %d of %d remaining"
+}

@@ -585,13 +585,20 @@ class GHSales_Sale_Engine {
 
 			error_log( 'GHSales: Adding BOGO badge - free_per_paid=' . $free_per_paid . ', qty=' . $quantity . ', total=' . $total_received );
 
+			// Get translated badge text (e.g., "1+1 GRATIS" in Dutch, "1+1 FREE" in English)
+			$badge_text = sprintf(
+				GHSales_i18n::get( 'bogo_badge', '1+%d FREE' ),
+				1,
+				$free_per_paid
+			);
+
 			// Add BOGO badge AND quantity data attribute for JavaScript
 			$name .= sprintf(
-				' <span class="ghsales-bogo-badge" data-free-per-paid="%d" data-paid-qty="%d" data-total-qty="%d" style="background: #46b450; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 8px;">1+%d FREE</span>',
+				' <span class="ghsales-bogo-badge" data-free-per-paid="%d" data-paid-qty="%d" data-total-qty="%d" style="background: #46b450; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-left: 8px;">%s</span>',
 				$free_per_paid,
 				$quantity,
 				$total_received,
-				$free_per_paid
+				esc_html( $badge_text )
 			);
 		}
 
@@ -623,14 +630,23 @@ class GHSales_Sale_Engine {
 			$max = $limit_info['max_quantity'];
 
 			if ( $remaining === 0 ) {
+				$message = sprintf(
+					GHSales_i18n::get( 'sale_limit_reached', 'Sale limit reached: Maximum %d items per customer' ),
+					$max
+				);
 				$name .= sprintf(
 					'<br><small class="ghsales-limit-message" style="color: #dc3232; font-weight: bold;">%s</small>',
-					sprintf( __( 'Sale limit reached: Maximum %d items per customer', 'ghsales' ), $max )
+					esc_html( $message )
 				);
 			} else {
+				$message = sprintf(
+					GHSales_i18n::get( 'sale_limit_remaining', 'Sale limit: %d of %d remaining' ),
+					$remaining,
+					$max
+				);
 				$name .= sprintf(
 					'<br><small class="ghsales-limit-message" style="color: #f0b849; font-weight: bold;">%s</small>',
-					sprintf( __( 'Sale limit: %d of %d remaining', 'ghsales' ), $remaining, $max )
+					esc_html( $message )
 				);
 			}
 		}

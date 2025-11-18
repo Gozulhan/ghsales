@@ -1,0 +1,9 @@
+{
+  "free": "GRATIS",
+  "paid": "betaald",
+  "and": "+",
+  "bogo_badge": "%d+%d GRATIS",
+  "sale": "Sale",
+  "sale_limit_reached": "Sale limiet bereikt: Maximaal %d items per klant",
+  "sale_limit_remaining": "Sale limiet: %d van %d resterend"
+}

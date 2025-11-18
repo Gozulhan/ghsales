@@ -72,6 +72,9 @@ class GHSales_Core {
 	 * @return void
 	 */
 	private function load_components() {
+		// Load i18n (translations)
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-i18n.php';
+
 		// Load GDPR helper
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-gdpr.php';
 
@@ -492,6 +495,9 @@ class GHSales_Core {
 
 		// Frontend JS for BOGO quantity display in mini cart
 		wp_enqueue_script( 'ghsales-frontend', GHSALES_PLUGIN_URL . 'assets/js/ghsales-frontend.js', array( 'jquery' ), GHSALES_VERSION, true );
+
+		// Enqueue translations to JavaScript
+		GHSales_i18n::enqueue_js_translations();
 	}
 
 	/**
