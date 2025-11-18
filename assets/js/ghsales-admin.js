@@ -60,6 +60,13 @@ jQuery(document).ready(function($) {
             // Show target selector and load correct options via AJAX
             $targetSelector.show();
 
+            // Check if ghsalesAdmin is defined
+            if (typeof ghsalesAdmin === 'undefined') {
+                console.error('ghsalesAdmin object not found');
+                $targetSelector.find('.ghsales-target-content').html('<p>Configuration error. Please refresh the page.</p>');
+                return;
+            }
+
             // Show loading message
             $targetSelector.find('.ghsales-target-content').html('<p>Loading...</p>');
 
@@ -74,16 +81,20 @@ jQuery(document).ready(function($) {
                     nonce: ghsalesAdmin.nonce
                 },
                 success: function(response) {
+                    console.log('AJAX Response:', response);
                     if (response.success) {
                         $targetSelector.find('.ghsales-target-content').html(response.data.html);
                         // Re-initialize Select2 for the new dropdown
                         initializeSelect2();
                     } else {
-                        $targetSelector.find('.ghsales-target-content').html('<p>Error loading options.</p>');
+                        console.error('AJAX Error:', response);
+                        var errorMsg = response.data && response.data.message ? response.data.message : 'Error loading options.';
+                        $targetSelector.find('.ghsales-target-content').html('<p>' + errorMsg + '</p>');
                     }
                 },
-                error: function() {
-                    $targetSelector.find('.ghsales-target-content').html('<p>Error loading options.</p>');
+                error: function(xhr, status, error) {
+                    console.error('AJAX Request Failed:', status, error, xhr.responseText);
+                    $targetSelector.find('.ghsales-target-content').html('<p>Error loading options. Check console for details.</p>');
                 }
             });
         }
