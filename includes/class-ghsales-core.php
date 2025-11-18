@@ -365,6 +365,9 @@ class GHSales_Core {
 
 			<h2><?php esc_html_e( 'WordPress Options Backup', 'ghsales' ); ?></h2>
 			<?php $this->render_options_backup(); ?>
+
+			<h2><?php esc_html_e( 'All Elementor Colors (System + Custom)', 'ghsales' ); ?></h2>
+			<?php $this->render_all_elementor_colors(); ?>
 		</div>
 		<?php
 	}
@@ -545,6 +548,8 @@ class GHSales_Core {
 			'background' => '#ffffff',
 		);
 
+		$all_elementor_colors = array(); // Store ALL colors for import
+
 		// Try to get Elementor global colors if Elementor is active
 		if ( class_exists( '\Elementor\Plugin' ) ) {
 			// Try newer Elementor Kit settings first (Elementor 3.0+)
@@ -553,6 +558,7 @@ class GHSales_Core {
 			if ( $kit_id ) {
 				$kit_settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
 
+				// Get System Colors
 				if ( ! empty( $kit_settings['system_colors'] ) ) {
 					$system_colors = $kit_settings['system_colors'];
 
@@ -561,8 +567,16 @@ class GHSales_Core {
 						if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
 							$elementor_id = $color_item['_id'];
 							$hex_color    = $color_item['color'];
+							$color_title  = isset( $color_item['title'] ) ? $color_item['title'] : $elementor_id;
 
-							// Map Elementor IDs to our keys
+							// Store in all colors array
+							$all_elementor_colors[ $elementor_id ] = array(
+								'color' => $hex_color,
+								'title' => $color_title,
+								'type'  => 'system',
+							);
+
+							// Map Elementor IDs to our default scheme keys
 							switch ( $elementor_id ) {
 								case 'primary':
 									$colors['primary'] = $hex_color;
@@ -580,6 +594,29 @@ class GHSales_Core {
 						}
 					}
 				}
+
+				// Get Custom Colors
+				if ( ! empty( $kit_settings['custom_colors'] ) ) {
+					$custom_colors = $kit_settings['custom_colors'];
+
+					foreach ( $custom_colors as $color_item ) {
+						if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
+							$color_id    = $color_item['_id'];
+							$hex_color   = $color_item['color'];
+							$color_title = isset( $color_item['title'] ) ? $color_item['title'] : $color_id;
+
+							// Store in all colors array
+							$all_elementor_colors[ $color_id ] = array(
+								'color' => $hex_color,
+								'title' => $color_title,
+								'type'  => 'custom',
+							);
+						}
+					}
+				}
+
+				// Store all colors in transient for display
+				set_transient( 'ghsales_all_elementor_colors', $all_elementor_colors, HOUR_IN_SECONDS );
 			}
 		}
 
@@ -705,6 +742,90 @@ class GHSales_Core {
 		echo '<p style="margin-top: 15px;">';
 		echo '<em>' . esc_html__( 'These colors will be automatically restored when color schemes are deactivated or the plugin is uninstalled.', 'ghsales' ) . '</em>';
 		echo '</p>';
+	}
+
+	/**
+	 * Render all Elementor colors (system + custom)
+	 * Shows complete color palette from Elementor
+	 *
+	 * @return void
+	 */
+	private function render_all_elementor_colors() {
+		$all_colors = get_transient( 'ghsales_all_elementor_colors' );
+
+		if ( empty( $all_colors ) ) {
+			echo '<div class="notice notice-info inline">';
+			echo '<p>' . esc_html__( 'No Elementor colors detected yet. Click "Re-detect Elementor Colors" button above to scan your Elementor color palette.', 'ghsales' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+
+		// Separate system and custom colors
+		$system_colors = array_filter( $all_colors, function( $item ) {
+			return $item['type'] === 'system';
+		});
+
+		$custom_colors = array_filter( $all_colors, function( $item ) {
+			return $item['type'] === 'custom';
+		});
+
+		echo '<p class="description">';
+		printf(
+			/* translators: %1$d: number of system colors, %2$d: number of custom colors */
+			esc_html__( 'Detected %1$d system colors and %2$d custom colors from your Elementor global palette.', 'ghsales' ),
+			count( $system_colors ),
+			count( $custom_colors )
+		);
+		echo '</p>';
+
+		// System Colors Table
+		if ( ! empty( $system_colors ) ) {
+			echo '<h3>' . esc_html__( 'System Colors', 'ghsales' ) . '</h3>';
+			echo '<table class="widefat striped" style="max-width: 800px;">';
+			echo '<thead><tr>';
+			echo '<th>' . esc_html__( 'Color Name', 'ghsales' ) . '</th>';
+			echo '<th>' . esc_html__( 'Hex Value', 'ghsales' ) . '</th>';
+			echo '<th>' . esc_html__( 'Preview', 'ghsales' ) . '</th>';
+			echo '</tr></thead><tbody>';
+
+			foreach ( $system_colors as $color_id => $color_data ) {
+				echo '<tr>';
+				echo '<td><strong>' . esc_html( $color_data['title'] ) . '</strong> <code style="color: #999;">(' . esc_html( $color_id ) . ')</code></td>';
+				echo '<td><code style="font-size: 14px;">' . esc_html( $color_data['color'] ) . '</code></td>';
+				echo '<td><div style="width: 60px; height: 40px; background-color: ' . esc_attr( $color_data['color'] ) . '; border: 2px solid #ddd; border-radius: 4px;"></div></td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody></table>';
+		}
+
+		// Custom Colors Table
+		if ( ! empty( $custom_colors ) ) {
+			echo '<h3 style="margin-top: 25px;">' . esc_html__( 'Custom Colors', 'ghsales' ) . '</h3>';
+			echo '<table class="widefat striped" style="max-width: 800px;">';
+			echo '<thead><tr>';
+			echo '<th>' . esc_html__( 'Color Name', 'ghsales' ) . '</th>';
+			echo '<th>' . esc_html__( 'Hex Value', 'ghsales' ) . '</th>';
+			echo '<th>' . esc_html__( 'Preview', 'ghsales' ) . '</th>';
+			echo '</tr></thead><tbody>';
+
+			foreach ( $custom_colors as $color_id => $color_data ) {
+				echo '<tr>';
+				echo '<td><strong>' . esc_html( $color_data['title'] ) . '</strong></td>';
+				echo '<td><code style="font-size: 14px;">' . esc_html( $color_data['color'] ) . '</code></td>';
+				echo '<td><div style="width: 60px; height: 40px; background-color: ' . esc_attr( $color_data['color'] ) . '; border: 2px solid #ddd; border-radius: 4px;"></div></td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody></table>';
+		}
+
+		// Future feature hint
+		echo '<div class="notice notice-info inline" style="margin-top: 20px;">';
+		echo '<p><strong>' . esc_html__( 'Coming Soon:', 'ghsales' ) . '</strong> ';
+		echo esc_html__( 'You\'ll be able to create custom color schemes from these colors with a visual picker in the next development phase!', 'ghsales' );
+		echo '</p>';
+		echo '</div>';
 	}
 
 	/**
