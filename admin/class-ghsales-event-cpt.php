@@ -272,10 +272,13 @@ class GHSales_Event_CPT {
 		$discount_value = $rule ? $rule->discount_value : '';
 		$priority      = $rule ? $rule->priority : 0;
 
+		<?php
+		// Calculate rule number (handle both numeric and string indexes)
+		$rule_number = is_numeric( $index ) ? ( $index + 1 ) : '{{RULE_NUMBER}}';
 		?>
 		<div class="ghsales-rule-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<h4>
-				<span><?php printf( esc_html__( 'Rule #%s', 'ghsales' ), esc_html( $index + 1 ) ); ?></span>
+				<span><?php printf( esc_html__( 'Rule #%s', 'ghsales' ), esc_html( $rule_number ) ); ?></span>
 				<a href="#" class="ghsales-remove-rule" data-index="<?php echo esc_attr( $index ); ?>">
 					<?php esc_html_e( 'Remove', 'ghsales' ); ?>
 				</a>
