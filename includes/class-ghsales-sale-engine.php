@@ -155,6 +155,8 @@ class GHSales_Sale_Engine {
 			$actual_product_id = $variation_id ? $variation_id : $product_id;
 			$quantity = $cart_item['quantity'];
 
+			error_log( 'GHSales: Processing cart item - product_id=' . $actual_product_id . ', qty=' . $quantity );
+
 			// Get original price (regular price, not sale price)
 			$wc_product = wc_get_product( $actual_product_id );
 			$regular_price = floatval( $wc_product->get_regular_price() );
@@ -166,6 +168,7 @@ class GHSales_Sale_Engine {
 			$original_price = $current_price;
 
 			// Check if this item has BOGO discount
+			error_log( 'Has ghsales_bogo in cart_item: ' . ( isset( $cart_item['ghsales_bogo'] ) ? 'YES' : 'NO' ) );
 			if ( isset( $cart_item['ghsales_bogo'] ) ) {
 				$bogo_data = $cart_item['ghsales_bogo'];
 				$free_per_paid = $bogo_data['free_per_paid'];
@@ -340,19 +343,26 @@ class GHSales_Sale_Engine {
 	 * @return void
 	 */
 	public static function handle_bogo_addition( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+		error_log( 'GHSales: handle_bogo_addition called - product_id=' . $product_id . ', qty=' . $quantity . ', cart_key=' . $cart_item_key );
+
 		// Get active events
 		$active_events = self::get_active_events();
 
 		if ( empty( $active_events ) ) {
+			error_log( 'GHSales: No active events found' );
 			return;
 		}
 
 		$actual_product_id = $variation_id ? $variation_id : $product_id;
+		error_log( 'GHSales: Looking for BOGO rules for product_id=' . $actual_product_id );
 
 		// Find BOGO rules that apply to this product
 		$bogo_rule = self::find_bogo_rule( $actual_product_id, $active_events );
+		error_log( 'GHSales: BOGO rule found: ' . ( $bogo_rule ? 'YES' : 'NO' ) );
 
 		if ( $bogo_rule ) {
+			error_log( 'GHSales: Applying BOGO rule - free_items=' . $bogo_rule['free_items'] );
+
 			// Check purchase limit if set
 			if ( ! empty( $bogo_rule['max_quantity'] ) ) {
 				$limit_check = self::check_purchase_limit(
@@ -363,6 +373,7 @@ class GHSales_Sale_Engine {
 
 				// If limit exceeded, don't apply BOGO
 				if ( ! $limit_check['allowed'] ) {
+					error_log( 'GHSales: Purchase limit reached - not applying BOGO' );
 					// Store limit info for displaying message
 					WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
 						'remaining' => $limit_check['remaining'],
@@ -379,6 +390,8 @@ class GHSales_Sale_Engine {
 				'event_name' => $bogo_rule['event_name'],
 				'max_quantity' => $bogo_rule['max_quantity'],
 			);
+
+			error_log( 'GHSales: Successfully set ghsales_bogo for cart item ' . $cart_item_key );
 		}
 	}
 
