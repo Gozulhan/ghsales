@@ -152,25 +152,38 @@ class GHSales_Sale_Engine {
 			if ( isset( $cart_item['ghsales_bogo'] ) ) {
 				$bogo_data = $cart_item['ghsales_bogo'];
 				$free_per_paid = $bogo_data['free_per_paid'];
+				$allow_stacking = isset( $bogo_data['allow_stacking'] ) ? $bogo_data['allow_stacking'] : false;
 
 				// Calculate: customer pays for X, gets X + free items
 				// For 1+1: qty=1 means they pay full price for 1, get 1 free (2 total)
 				// For 1+2: qty=1 means they pay full price for 1, get 2 free (3 total)
 				$total_items_received = $quantity * ( 1 + $free_per_paid );
 
-				// BOGO means customer pays FULL PRICE for what they buy
-				// We don't change the price, we just track that they get extra items
-				// Price stays at original_price
+				// BOGO means customer pays FULL PRICE for what they buy (initially)
+				// But if stacking is allowed, we'll apply other discounts below
+				$final_price = $original_price;
+
+				// Check if stacking is allowed - if so, look for other discounts
+				if ( $allow_stacking ) {
+					$other_discount = self::find_best_discount( $actual_product_id, $active_events, $original_price );
+					if ( $other_discount ) {
+						// Apply the additional discount to the BOGO item
+						$final_price = self::calculate_discounted_price( $original_price, $other_discount );
+						$product->set_price( $final_price );
+					}
+				}
 
 				// Store BOGO info for display
 				$cart_item['ghsales_bogo_display'] = array(
 					'original_price' => $original_price,
+					'final_price' => $final_price,
 					'total_items' => $total_items_received,
 					'free_per_paid' => $free_per_paid,
 					'event_name' => $bogo_data['event_name'],
+					'has_additional_discount' => $final_price < $original_price,
 				);
 
-				continue; // Skip other discount checks for BOGO items
+				continue; // Skip normal discount checks for BOGO items
 			}
 
 			// Find applicable discount for non-BOGO products
@@ -373,6 +386,7 @@ class GHSales_Sale_Engine {
 					$best_rule = array(
 						'free_items' => intval( $rule->discount_value ),
 						'event_name' => $event->post_title,
+						'allow_stacking' => ! empty( $event->allow_stacking ),
 					);
 					$highest_priority = $rule->priority;
 				}
@@ -396,11 +410,23 @@ class GHSales_Sale_Engine {
 			$bogo = $cart_item['ghsales_bogo_display'];
 			$free_per_paid = $bogo['free_per_paid'];
 
-			return sprintf(
-				'%s<br><small class="ghsales-bogo-label" style="color: #46b450; font-weight: bold;">%s</small>',
-				wc_price( $bogo['original_price'] ),
-				sprintf( __( '1+%d FREE', 'ghsales' ), $free_per_paid )
-			);
+			// Check if there's also a stacked discount
+			if ( ! empty( $bogo['has_additional_discount'] ) ) {
+				// Show original price strikethrough, then discounted price with BOGO label
+				return sprintf(
+					'<del>%s</del> <ins>%s</ins><br><small class="ghsales-bogo-label" style="color: #46b450; font-weight: bold;">%s</small>',
+					wc_price( $bogo['original_price'] ),
+					wc_price( $bogo['final_price'] ),
+					sprintf( __( '1+%d FREE + Sale', 'ghsales' ), $free_per_paid )
+				);
+			} else {
+				// Just BOGO, no additional discount
+				return sprintf(
+					'%s<br><small class="ghsales-bogo-label" style="color: #46b450; font-weight: bold;">%s</small>',
+					wc_price( $bogo['original_price'] ),
+					sprintf( __( '1+%d FREE', 'ghsales' ), $free_per_paid )
+				);
+			}
 		}
 
 		// Show original + discounted price if discount applied
