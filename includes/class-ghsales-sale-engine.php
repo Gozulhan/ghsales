@@ -154,13 +154,13 @@ class GHSales_Sale_Engine {
 				$free_per_paid = $bogo_data['free_per_paid'];
 
 				// Calculate: customer pays for X, gets X + free items
-				// For 1+1: qty=1 means they pay for 1, get 2 total
-				// For 1+2: qty=1 means they pay for 1, get 3 total
+				// For 1+1: qty=1 means they pay full price for 1, get 1 free (2 total)
+				// For 1+2: qty=1 means they pay full price for 1, get 2 free (3 total)
 				$total_items_received = $quantity * ( 1 + $free_per_paid );
 
-				// Calculate the effective price per item (spread cost across all items)
-				$effective_price_per_item = $original_price / ( 1 + $free_per_paid );
-				$product->set_price( $effective_price_per_item );
+				// BOGO means customer pays FULL PRICE for what they buy
+				// We don't change the price, we just track that they get extra items
+				// Price stays at original_price
 
 				// Store BOGO info for display
 				$cart_item['ghsales_bogo_display'] = array(
