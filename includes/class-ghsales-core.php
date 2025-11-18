@@ -58,11 +58,30 @@ class GHSales_Core {
 		// Detect GDPR/cookie consent plugins
 		$this->detect_gdpr_plugin();
 
+		// Load plugin components
+		$this->load_components();
+
 		// Initialize plugin components
 		$this->init_hooks();
+	}
 
-		// Load plugin components (will be added in future phases)
-		// $this->load_components();
+	/**
+	 * Load plugin components
+	 * Includes and initializes all plugin classes
+	 *
+	 * @return void
+	 */
+	private function load_components() {
+		// Load GDPR helper
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-gdpr.php';
+
+		// Load tracker
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-tracker.php';
+		GHSales_Tracker::init();
+
+		// Load stats aggregator
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
+		GHSales_Stats::init();
 	}
 
 	/**

@@ -42,8 +42,26 @@ class GHSales_Installer {
 		// Update plugin version in database
 		update_option( 'ghsales_version', GHSALES_VERSION );
 
+		// Schedule cron jobs
+		self::schedule_cron_jobs();
+
 		// Trigger activation hook for other components
 		do_action( 'ghsales_activated' );
+	}
+
+	/**
+	 * Schedule cron jobs for stats management
+	 *
+	 * @return void
+	 */
+	private static function schedule_cron_jobs() {
+		// Load stats class
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
+
+		// Schedule all cron jobs
+		GHSales_Stats::schedule_cron_jobs();
+
+		error_log( 'GHSales: Cron jobs scheduled successfully' );
 	}
 
 	/**

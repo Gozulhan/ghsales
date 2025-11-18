@@ -111,6 +111,10 @@ register_activation_hook( __FILE__, 'ghsales_activate' );
  * Runs when plugin is deactivated (but not deleted)
  */
 function ghsales_deactivate() {
+	// Unschedule cron jobs
+	require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
+	GHSales_Stats::unschedule_cron_jobs();
+
 	// Flush rewrite rules to clean up
 	flush_rewrite_rules();
 
