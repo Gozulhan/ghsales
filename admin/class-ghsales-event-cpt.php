@@ -673,11 +673,11 @@ class GHSales_Event_CPT {
 
 		// Get parameters
 		$applies_to = isset( $_POST['applies_to'] ) ? sanitize_text_field( $_POST['applies_to'] ) : '';
-		$index      = isset( $_POST['index'] ) ? sanitize_text_field( $_POST['index'] ) : '';
+		$index      = isset( $_POST['index'] ) ? sanitize_text_field( $_POST['index'] ) : null;
 
-		// Validate parameters
-		if ( empty( $applies_to ) || empty( $index ) ) {
-			error_log( 'GHSales AJAX: Invalid parameters - applies_to: ' . $applies_to . ', index: ' . $index );
+		// Validate parameters (note: index can be 0, so check for null/empty string specifically)
+		if ( empty( $applies_to ) || ! isset( $_POST['index'] ) || $index === '' ) {
+			error_log( 'GHSales AJAX: Invalid parameters - applies_to: ' . $applies_to . ', index: ' . var_export( $index, true ) );
 			wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'ghsales' ) ) );
 		}
 
