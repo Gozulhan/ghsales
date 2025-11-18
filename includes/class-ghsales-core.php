@@ -83,6 +83,10 @@ class GHSales_Core {
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
 		GHSales_Stats::init();
 
+		// Load Sale Engine (applies discounts to cart)
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-sale-engine.php';
+		GHSales_Sale_Engine::init();
+
 		// Load admin components
 		if ( is_admin() ) {
 			// Sale Event custom post type
