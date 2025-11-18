@@ -185,15 +185,20 @@ class GHSales_Sale_Engine {
 						$quantity
 					);
 
-					// If limit exceeded, remove BOGO and show message
+					// If limit exceeded, auto-reduce quantity to maximum allowed
 					if ( ! $limit_check['allowed'] ) {
-						error_log( 'GHSales: Purchase limit reached (qty=' . $quantity . ', limit=' . $bogo_data['max_quantity'] . ') - removing BOGO' );
-						unset( WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] );
+						$max_allowed = $limit_check['remaining'] + $limit_check['purchased'];
+						error_log( 'GHSales: Purchase limit reached (qty=' . $quantity . ', limit=' . $bogo_data['max_quantity'] . ') - auto-reducing to ' . $max_allowed );
+
+						// Set quantity to maximum allowed
+						WC()->cart->cart_contents[ $cart_item_key ]['quantity'] = $max_allowed;
+						$quantity = $max_allowed; // Update local variable too
+
+						// Show warning that we reduced the quantity
 						WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
-							'remaining' => $limit_check['remaining'],
+							'remaining' => 0, // No more remaining after this
 							'max_quantity' => $bogo_data['max_quantity'],
 						);
-						continue;
 					}
 				}
 
@@ -394,15 +399,22 @@ class GHSales_Sale_Engine {
 					$quantity
 				);
 
-				// If limit exceeded, don't apply BOGO
+				// If limit exceeded, auto-reduce quantity to maximum allowed
 				if ( ! $limit_check['allowed'] ) {
-					error_log( 'GHSales: Purchase limit reached - not applying BOGO' );
+					$max_allowed = $limit_check['remaining'] + $limit_check['purchased'];
+					error_log( 'GHSales: Purchase limit reached (qty=' . $quantity . ') - auto-reducing to ' . $max_allowed );
+
+					// Set quantity to maximum allowed
+					WC()->cart->cart_contents[ $cart_item_key ]['quantity'] = $max_allowed;
+					$quantity = $max_allowed; // Update local variable for BOGO calculation
+
 					// Store limit info for displaying message
 					WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
-						'remaining' => $limit_check['remaining'],
+						'remaining' => 0, // No more remaining after this
 						'max_quantity' => $bogo_rule['max_quantity'],
 					);
-					return; // Don't apply BOGO
+
+					// Continue to apply BOGO on the reduced quantity
 				}
 			}
 
