@@ -493,9 +493,22 @@ class GHSales_Upsell {
 		$popular = GHSales_Tracker::get_popular_products( '7days', $limit );
 
 		$recommendations = array();
-		$max_views = ! empty( $popular ) ? intval( $popular[0]['views'] ) : 1;
+
+		// Safety check: ensure we have valid data before processing
+		if ( empty( $popular ) || ! is_array( $popular ) ) {
+			return $recommendations;
+		}
+
+		// Get max views for normalization, ensuring it's never zero
+		$max_views = ! empty( $popular[0]['views'] ) ? intval( $popular[0]['views'] ) : 1;
+		$max_views = max( 1, $max_views ); // Ensure at least 1 to prevent division by zero
 
 		foreach ( $popular as $index => $item ) {
+			// Skip if views key doesn't exist
+			if ( ! isset( $item['views'] ) || ! isset( $item['product_id'] ) ) {
+				continue;
+			}
+
 			$product_id = intval( $item['product_id'] );
 
 			if ( in_array( $product_id, $args['exclude_ids'] ) ) {
@@ -503,7 +516,9 @@ class GHSales_Upsell {
 			}
 
 			// Popular products: 30-50 points (based on view count)
-			$score = 30 + ( 20 * ( intval( $item['views'] ) / $max_views ) );
+			// Ensure views is at least 0 to prevent errors
+			$views = max( 0, intval( $item['views'] ) );
+			$score = 30 + ( 20 * ( $views / $max_views ) );
 
 			$recommendations[] = array(
 				'product_id' => $product_id,
