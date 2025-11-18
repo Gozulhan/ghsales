@@ -61,4 +61,22 @@ jQuery(document).ready(function($) {
             addBogoQuantityInfo();
         }, 500);
     });
+
+    // Listen for ghminicart drawer updates (AJAX refresh)
+    $(document).on('ghminicart_drawer_updated', function() {
+        console.log('GHSales: Drawer updated, re-adding BOGO info');
+        setTimeout(function() {
+            // Remove old BOGO quantity divs
+            $('.ghsales-bogo-quantity').remove();
+            // Re-add with updated quantities
+            addBogoQuantityInfo();
+        }, 100);
+    });
+
+    // Debug: Log when badges are found
+    if ($('.ghsales-bogo-badge').length > 0) {
+        console.log('GHSales: Found ' + $('.ghsales-bogo-badge').length + ' BOGO badges');
+    } else {
+        console.log('GHSales: No BOGO badges found on page load');
+    }
 });
