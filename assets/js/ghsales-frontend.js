@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
                 return;
             }
 
-            // Look for BOGO badge with data attributes
+            // Look for BOGO badge with data attributes in the title
             var $bogoBadge = $itemDetails.find('.ghsales-bogo-badge');
 
             if ($bogoBadge.length > 0) {
@@ -51,6 +51,12 @@ jQuery(document).ready(function($) {
 
                 // Insert BEFORE the quantity controls (directly above)
                 $quantityDiv.before($bogoQtyDiv);
+
+                // Move the badge from title to below the quantity text
+                // Remove from title first
+                var $movedBadge = $bogoBadge.detach();
+                // Insert after the quantity info div we just created
+                $bogoQtyDiv.after($movedBadge);
             }
         });
     }
