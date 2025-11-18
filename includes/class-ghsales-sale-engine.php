@@ -591,6 +591,11 @@ class GHSales_Sale_Engine {
 	 * @return string Modified sale badge HTML
 	 */
 	public static function custom_sale_badge( $html, $post, $product ) {
+		// Safety check - ensure we have a valid product object
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return $html;
+		}
+
 		$product_id = $product->get_id();
 
 		// Check if product has active sale
