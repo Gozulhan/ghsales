@@ -308,12 +308,15 @@ class GHSales_Core {
 			$has_gulcan_mobile = true;
 		}
 
-		// Upsell styles with cache busting
-		// Dependencies: only include gulcan styles if they exist, otherwise just swiper
+		// Upsell styles with cache busting - NO DEPENDENCIES to ensure it always loads
 		$upsells_css_path = GHSALES_PLUGIN_DIR . 'public/css/ghsales-upsells.css';
-		$upsells_css_version = file_exists( $upsells_css_path ) ? filemtime( $upsells_css_path ) : GHSALES_VERSION;
-		$upsells_dependencies = $has_gulcan_mobile ? array( 'gulcan-mobile-product-cards' ) : array( 'swiper' );
-		wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', $upsells_dependencies, $upsells_css_version );
+		if ( file_exists( $upsells_css_path ) ) {
+			$upsells_css_version = filemtime( $upsells_css_path );
+			wp_enqueue_style( 'ghsales-upsells', GHSALES_PLUGIN_URL . 'public/css/ghsales-upsells.css', array(), $upsells_css_version );
+			error_log( 'GHSales: Enqueued upsells CSS - path: ' . $upsells_css_path . ', version: ' . $upsells_css_version );
+		} else {
+			error_log( 'GHSales: WARNING - CSS file not found at: ' . $upsells_css_path );
+		}
 
 		// Enqueue Swiper JS (required for minicart upsells carousel)
 		wp_enqueue_script(
