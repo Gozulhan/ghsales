@@ -53,6 +53,16 @@ class GHSales_Sale_Engine {
 		// Show sale badges on product pages
 		add_filter( 'woocommerce_sale_flash', array( __CLASS__, 'custom_sale_badge' ), 10, 3 );
 
+		// Display limit reached message
+		add_filter( 'woocommerce_cart_item_name', array( __CLASS__, 'display_limit_message' ), 20, 3 );
+
+		// Track purchases when order is completed
+		add_action( 'woocommerce_order_status_completed', array( __CLASS__, 'track_order_purchases' ) );
+		add_action( 'woocommerce_order_status_processing', array( __CLASS__, 'track_order_purchases' ) );
+
+		// Save BOGO data to order item meta
+		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'save_bogo_to_order_item' ), 10, 4 );
+
 		// Clear events cache when events are updated
 		add_action( 'save_post_ghsales_event', array( __CLASS__, 'clear_cache' ) );
 	}
@@ -341,10 +351,31 @@ class GHSales_Sale_Engine {
 		$bogo_rule = self::find_bogo_rule( $actual_product_id, $active_events );
 
 		if ( $bogo_rule ) {
+			// Check purchase limit if set
+			if ( ! empty( $bogo_rule['max_quantity'] ) ) {
+				$limit_check = self::check_purchase_limit(
+					$bogo_rule['rule_id'],
+					$bogo_rule['max_quantity'],
+					$quantity
+				);
+
+				// If limit exceeded, don't apply BOGO
+				if ( ! $limit_check['allowed'] ) {
+					// Store limit info for displaying message
+					WC()->cart->cart_contents[ $cart_item_key ]['ghsales_limit_reached'] = array(
+						'remaining' => $limit_check['remaining'],
+						'max_quantity' => $bogo_rule['max_quantity'],
+					);
+					return; // Don't apply BOGO
+				}
+			}
+
 			// Mark this cart item as BOGO (we'll handle pricing in apply_cart_discounts)
 			WC()->cart->cart_contents[ $cart_item_key ]['ghsales_bogo'] = array(
+				'rule_id' => intval( $bogo_rule['rule_id'] ),
 				'free_per_paid' => intval( $bogo_rule['free_items'] ),
 				'event_name' => $bogo_rule['event_name'],
+				'max_quantity' => $bogo_rule['max_quantity'],
 			);
 		}
 	}
@@ -400,10 +431,12 @@ class GHSales_Sale_Engine {
 
 				if ( $applies && $rule->priority > $highest_priority ) {
 					$best_rule = array(
+						'rule_id' => intval( $rule->id ),
 						'free_items' => intval( $rule->discount_value ),
 						'event_name' => $event->post_title,
 						'allow_stacking' => ! empty( $event->allow_stacking ),
 						'apply_on_sale_price' => ! empty( $event->apply_on_sale_price ),
+						'max_quantity' => ! empty( $rule->max_quantity_per_customer ) ? intval( $rule->max_quantity_per_customer ) : null,
 					);
 					$highest_priority = $rule->priority;
 				}
@@ -547,5 +580,215 @@ class GHSales_Sale_Engine {
 	 */
 	public static function clear_cache() {
 		self::$active_events = null;
+	}
+
+	/**
+	 * Display limit reached message for products
+	 *
+	 * @param string $name Product name
+	 * @param array  $cart_item Cart item data
+	 * @param string $cart_item_key Cart item key
+	 * @return string Modified product name with limit message
+	 */
+	public static function display_limit_message( $name, $cart_item, $cart_item_key ) {
+		if ( isset( $cart_item['ghsales_limit_reached'] ) ) {
+			$limit_info = $cart_item['ghsales_limit_reached'];
+			$remaining = $limit_info['remaining'];
+			$max = $limit_info['max_quantity'];
+
+			if ( $remaining === 0 ) {
+				$name .= sprintf(
+					'<br><small class="ghsales-limit-message" style="color: #dc3232; font-weight: bold;">%s</small>',
+					sprintf( __( 'Sale limit reached: Maximum %d items per customer', 'ghsales' ), $max )
+				);
+			} else {
+				$name .= sprintf(
+					'<br><small class="ghsales-limit-message" style="color: #f0b849; font-weight: bold;">%s</small>',
+					sprintf( __( 'Sale limit: %d of %d remaining', 'ghsales' ), $remaining, $max )
+				);
+			}
+		}
+
+		return $name;
+	}
+
+	/**
+	 * Save BOGO data to order item meta for tracking
+	 *
+	 * @param WC_Order_Item_Product $item Order item
+	 * @param string $cart_item_key Cart item key
+	 * @param array $values Cart item values
+	 * @param WC_Order $order Order object
+	 * @return void
+	 */
+	public static function save_bogo_to_order_item( $item, $cart_item_key, $values, $order ) {
+		// Save BOGO data if present
+		if ( isset( $values['ghsales_bogo'] ) ) {
+			$item->add_meta_data( '_ghsales_bogo', $values['ghsales_bogo'], true );
+		}
+
+		// Save BOGO display data for showing in order details
+		if ( isset( $values['ghsales_bogo_display'] ) ) {
+			$item->add_meta_data( '_ghsales_bogo_display', $values['ghsales_bogo_display'], true );
+		}
+	}
+
+	/**
+	 * Track purchases from completed order for limit enforcement
+	 *
+	 * @param int $order_id Order ID
+	 * @return void
+	 */
+	public static function track_order_purchases( $order_id ) {
+		// Get order
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		// Check if we already tracked this order
+		$tracked = $order->get_meta( '_ghsales_limits_tracked', true );
+		if ( $tracked ) {
+			return; // Already tracked
+		}
+
+		// Loop through order items
+		foreach ( $order->get_items() as $item ) {
+			// Check if this item had BOGO applied
+			$bogo_data = $item->get_meta( '_ghsales_bogo', true );
+			if ( $bogo_data && isset( $bogo_data['rule_id'] ) ) {
+				// Track this purchase
+				self::track_purchase(
+					intval( $bogo_data['rule_id'] ),
+					intval( $item->get_quantity() )
+				);
+			}
+		}
+
+		// Mark order as tracked
+		$order->update_meta_data( '_ghsales_limits_tracked', true );
+		$order->save();
+	}
+
+	/**
+	 * Get customer identifier for purchase limit tracking
+	 * Uses email for logged-in users, session ID for guests
+	 *
+	 * @return string Customer identifier
+	 */
+	private static function get_customer_identifier() {
+		// For logged-in users, use email address
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+			return 'email_' . $user->user_email;
+		}
+
+		// For guests, use WooCommerce session ID
+		if ( WC()->session ) {
+			$session_id = WC()->session->get_customer_id();
+			if ( $session_id ) {
+				return 'session_' . $session_id;
+			}
+		}
+
+		// Fallback to IP address (less reliable but better than nothing)
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		return 'ip_' . $ip;
+	}
+
+	/**
+	 * Check if customer has reached purchase limit for a rule
+	 *
+	 * @param int $rule_id Rule ID
+	 * @param int $max_quantity Maximum quantity allowed
+	 * @param int $requested_quantity Quantity customer wants to add
+	 * @return array ['allowed' => bool, 'remaining' => int, 'purchased' => int]
+	 */
+	public static function check_purchase_limit( $rule_id, $max_quantity, $requested_quantity ) {
+		global $wpdb;
+
+		// If no limit set, allow unlimited
+		if ( empty( $max_quantity ) || $max_quantity <= 0 ) {
+			return array(
+				'allowed' => true,
+				'remaining' => PHP_INT_MAX,
+				'purchased' => 0,
+			);
+		}
+
+		$customer_id = self::get_customer_identifier();
+
+		// Get current purchased quantity
+		$purchased = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT quantity_purchased FROM {$wpdb->prefix}ghsales_purchase_limits
+				WHERE rule_id = %d AND customer_identifier = %s",
+				$rule_id,
+				$customer_id
+			)
+		);
+
+		$purchased = $purchased ? intval( $purchased ) : 0;
+		$remaining = max( 0, $max_quantity - $purchased );
+		$allowed = $requested_quantity <= $remaining;
+
+		return array(
+			'allowed' => $allowed,
+			'remaining' => $remaining,
+			'purchased' => $purchased,
+		);
+	}
+
+	/**
+	 * Track purchase for limit enforcement
+	 * Called after successful order completion
+	 *
+	 * @param int $rule_id Rule ID
+	 * @param int $quantity Quantity purchased
+	 * @return void
+	 */
+	public static function track_purchase( $rule_id, $quantity ) {
+		global $wpdb;
+
+		$customer_id = self::get_customer_identifier();
+
+		// Check if record exists
+		$existing = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT quantity_purchased FROM {$wpdb->prefix}ghsales_purchase_limits
+				WHERE rule_id = %d AND customer_identifier = %s",
+				$rule_id,
+				$customer_id
+			)
+		);
+
+		if ( $existing !== null ) {
+			// Update existing record
+			$wpdb->update(
+				$wpdb->prefix . 'ghsales_purchase_limits',
+				array(
+					'quantity_purchased' => intval( $existing ) + intval( $quantity ),
+					'last_updated' => current_time( 'mysql' ),
+				),
+				array(
+					'rule_id' => $rule_id,
+					'customer_identifier' => $customer_id,
+				),
+				array( '%d', '%s' ),
+				array( '%d', '%s' )
+			);
+		} else {
+			// Insert new record
+			$wpdb->insert(
+				$wpdb->prefix . 'ghsales_purchase_limits',
+				array(
+					'rule_id' => $rule_id,
+					'customer_identifier' => $customer_id,
+					'quantity_purchased' => intval( $quantity ),
+					'last_updated' => current_time( 'mysql' ),
+				),
+				array( '%d', '%s', '%d', '%s' )
+			);
+		}
 	}
 }

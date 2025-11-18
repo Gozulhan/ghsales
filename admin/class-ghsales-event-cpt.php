@@ -274,6 +274,7 @@ class GHSales_Event_CPT {
 		$target_ids    = $rule ? $rule->target_ids : '';
 		$discount_value = $rule ? $rule->discount_value : '';
 		$priority      = $rule ? $rule->priority : 0;
+		$max_quantity  = $rule ? $rule->max_quantity_per_customer : '';
 
 		// Calculate display number (handle both numeric and template placeholder)
 		$display_number = is_numeric( $index ) ? ( $index + 1 ) : '{{DISPLAY_NUMBER}}';
@@ -340,6 +341,17 @@ class GHSales_Event_CPT {
 					   min="0"
 					   class="small-text">
 				<p class="description"><?php esc_html_e( 'Higher number = higher priority. Used when multiple rules match the same product.', 'ghsales' ); ?></p>
+			</div>
+
+			<div class="ghsales-rule-field">
+				<label><?php esc_html_e( 'Max Quantity Per Customer (Optional)', 'ghsales' ); ?></label>
+				<input type="number"
+					   name="ghsales_rules[<?php echo esc_attr( $index ); ?>][max_quantity_per_customer]"
+					   value="<?php echo esc_attr( $max_quantity ); ?>"
+					   min="0"
+					   class="small-text"
+					   placeholder="<?php esc_attr_e( 'Unlimited', 'ghsales' ); ?>">
+				<p class="description"><?php esc_html_e( 'Maximum quantity a customer can purchase with this discount. Leave empty for unlimited. (Tracked per email for logged-in users, per session for guests)', 'ghsales' ); ?></p>
 			</div>
 		</div>
 		<?php
@@ -557,17 +569,28 @@ class GHSales_Event_CPT {
 					}
 				}
 
+				// Get max quantity (can be empty for unlimited)
+				$max_quantity = null;
+				if ( isset( $rule_data['max_quantity_per_customer'] ) && $rule_data['max_quantity_per_customer'] !== '' ) {
+					$max_quantity = absint( $rule_data['max_quantity_per_customer'] );
+					// Convert 0 to null (means unlimited)
+					if ( $max_quantity === 0 ) {
+						$max_quantity = null;
+					}
+				}
+
 				$wpdb->insert(
 					$table,
 					array(
-						'event_id'       => $event_id,
-						'rule_type'      => sanitize_text_field( $rule_data['rule_type'] ),
-						'applies_to'     => sanitize_text_field( $rule_data['applies_to'] ),
-						'target_ids'     => $target_ids,
-						'discount_value' => floatval( $rule_data['discount_value'] ),
-						'priority'       => absint( $rule_data['priority'] ),
+						'event_id'                  => $event_id,
+						'rule_type'                 => sanitize_text_field( $rule_data['rule_type'] ),
+						'applies_to'                => sanitize_text_field( $rule_data['applies_to'] ),
+						'target_ids'                => $target_ids,
+						'discount_value'            => floatval( $rule_data['discount_value'] ),
+						'priority'                  => absint( $rule_data['priority'] ),
+						'max_quantity_per_customer' => $max_quantity,
 					),
-					array( '%d', '%s', '%s', '%s', '%f', '%d' )
+					array( '%d', '%s', '%s', '%s', '%f', '%d', '%d' )
 				);
 			}
 		}

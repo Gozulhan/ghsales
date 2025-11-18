@@ -115,6 +115,7 @@ class GHSales_Installer {
 			discount_value DECIMAL(10,2) NOT NULL,
 			conditions LONGTEXT NULL,
 			priority INT NOT NULL DEFAULT 0,
+			max_quantity_per_customer INT UNSIGNED NULL,
 			PRIMARY KEY (id),
 			KEY idx_event (event_id)
 		) $charset_collate;";
@@ -217,6 +218,21 @@ class GHSales_Installer {
 			KEY idx_session (session_id),
 			KEY idx_user (user_id),
 			KEY idx_consent_type (consent_type)
+		) $charset_collate;";
+
+		/**
+		 * Table 8: Purchase Limits
+		 * Track purchase limits per customer for sale rules
+		 */
+		$sql[] = "CREATE TABLE {$wpdb->prefix}ghsales_purchase_limits (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			rule_id BIGINT UNSIGNED NOT NULL,
+			customer_identifier VARCHAR(255) NOT NULL,
+			quantity_purchased INT UNSIGNED NOT NULL DEFAULT 0,
+			last_updated DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_rule_customer (rule_id, customer_identifier),
+			KEY idx_customer (customer_identifier)
 		) $charset_collate;";
 
 		// Load WordPress database upgrade functions
@@ -364,6 +380,7 @@ class GHSales_Installer {
 
 		// Delete all plugin tables
 		$tables = array(
+			'ghsales_purchase_limits',
 			'ghsales_consent_log',
 			'ghsales_upsell_cache',
 			'ghsales_user_activity',
