@@ -18,7 +18,7 @@ jQuery(document).ready(function($) {
 
         // Replace placeholders with actual values
         template = template.replace(/{{INDEX}}/g, ruleIndex);
-        template = template.replace(/{{RULE_NUMBER}}/g, ruleIndex + 1);
+        template = template.replace(/{{DISPLAY_NUMBER}}/g, ruleIndex + 1);
 
         // Append to container
         $('#ghsales-rules-container').append(template);
