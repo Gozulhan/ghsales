@@ -82,6 +82,13 @@ class GHSales_Core {
 		// Load stats aggregator
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-stats.php';
 		GHSales_Stats::init();
+
+		// Load admin components
+		if ( is_admin() ) {
+			// Sale Event custom post type
+			require_once GHSALES_PLUGIN_DIR . 'admin/class-ghsales-event-cpt.php';
+			GHSales_Event_CPT::init();
+		}
 	}
 
 	/**
@@ -447,16 +454,13 @@ class GHSales_Core {
 	 * @return void
 	 */
 	public function enqueue_admin_assets( $hook ) {
-		// Only load on GHSales admin pages
-		if ( strpos( $hook, 'ghsales' ) === false ) {
+		// Load on all GHSales pages and Sale Event editor
+		if ( strpos( $hook, 'ghsales' ) === false && get_post_type() !== 'ghsales_event' ) {
 			return;
 		}
 
-		// Admin CSS (will create in future phase)
-		// wp_enqueue_style( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/css/ghsales-admin.css', array(), GHSALES_VERSION );
-
-		// Admin JS (will create in future phase)
-		// wp_enqueue_script( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/js/ghsales-admin.js', array( 'jquery' ), GHSALES_VERSION, true );
+		// Admin JS
+		wp_enqueue_script( 'ghsales-admin', GHSALES_PLUGIN_URL . 'assets/js/ghsales-admin.js', array( 'jquery' ), GHSALES_VERSION, true );
 	}
 
 	/**
