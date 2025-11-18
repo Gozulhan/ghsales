@@ -454,8 +454,13 @@ class GHSales_Core {
 	 * @return void
 	 */
 	public function enqueue_admin_assets( $hook ) {
-		// Load on all GHSales pages and Sale Event editor
-		if ( strpos( $hook, 'ghsales' ) === false && get_post_type() !== 'ghsales_event' ) {
+		global $post_type;
+
+		// Load on GHSales pages OR Sale Event editor
+		$is_ghsales_page = strpos( $hook, 'ghsales' ) !== false;
+		$is_event_editor = ( $hook === 'post.php' || $hook === 'post-new.php' ) && $post_type === 'ghsales_event';
+
+		if ( ! $is_ghsales_page && ! $is_event_editor ) {
 			return;
 		}
 
