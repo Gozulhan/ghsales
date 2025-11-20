@@ -10,6 +10,8 @@
 (function($) {
 	'use strict';
 
+	console.log('GHSales Upsell: Script loaded');
+
 	/**
 	 * GHSales Upsell Handler
 	 */
@@ -18,14 +20,25 @@
 		 * Initialize
 		 */
 		init: function() {
+			console.log('GHSales Upsell: Initializing...');
 			this.bindEvents();
+			console.log('GHSales Upsell: Initialized successfully');
 		},
 
 		/**
 		 * Bind event handlers
 		 */
 		bindEvents: function() {
+			console.log('GHSales Upsell: Binding event handlers to .ghsales-upsell-add-to-cart');
+
+			// Use delegated event binding so it works with dynamically loaded content
 			$(document).on('click', '.ghsales-upsell-add-to-cart', this.handleAddToCart.bind(this));
+
+			console.log('GHSales Upsell: Event handlers bound successfully');
+
+			// Check if buttons exist on page
+			const buttonCount = $('.ghsales-upsell-add-to-cart').length;
+			console.log('GHSales Upsell: Found ' + buttonCount + ' add to cart buttons on page');
 		},
 
 		/**
@@ -34,8 +47,11 @@
 		handleAddToCart: function(e) {
 			e.preventDefault();
 			console.log('GHSales Upsell: Add to cart button clicked');
+			console.log('GHSales Upsell: Event object:', e);
 
 			const $button = $(e.currentTarget);
+			console.log('GHSales Upsell: Button element:', $button[0]);
+
 			const productId = $button.data('product-id');
 			console.log('GHSales Upsell: Product ID:', productId);
 
@@ -123,6 +139,7 @@
 
 	// Initialize on document ready
 	$(document).ready(function() {
+		console.log('GHSales Upsell: Document ready, calling init()');
 		GHSalesUpsell.init();
 	});
 
