@@ -186,21 +186,12 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
    Ensure product cards work perfectly in minicart
    ======================================== */
 
-/* FORCE Swiper slide widths to prevent runaway growth */
+/* Let Swiper calculate slide widths (same as gulcan-plugins) */
 .ghsales-cart-upsells .swiper-slide,
 .ghsales-special-sales-section .swiper-slide {
-	width: 160px !important; /* Fixed width for mobile */
-	flex-shrink: 0 !important;
-	height: auto !important;
-	position: relative !important;
-}
-
-/* Tablet and desktop widths */
-@media (min-width: 768px) {
-	.ghsales-cart-upsells .swiper-slide,
-	.ghsales-special-sales-section .swiper-slide {
-		width: 180px !important;
-	}
+	flex-shrink: 0;
+	height: auto;
+	position: relative;
 }
 
 /* Make sure product cards don't overflow */
