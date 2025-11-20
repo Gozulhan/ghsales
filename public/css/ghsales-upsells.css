@@ -245,13 +245,16 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
 }
 
 .ghsales-upsell-add-to-cart.success {
-	background: #4A3F35;
+	background: #27ae60 !important;
 	animation: none;
-	transform: scale(1);
+	transform: scale(1.05) translateZ(0);
+	transition: all 0.3s ease;
 }
 
 .ghsales-upsell-add-to-cart.error {
-	background: #e74c3c;
+	background: #e74c3c !important;
+	transform: scale(1.05) translateZ(0);
+	transition: all 0.3s ease;
 }
 
 .ghsales-upsell-add-to-cart svg {

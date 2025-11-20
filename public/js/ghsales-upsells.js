@@ -123,14 +123,21 @@
 		},
 
 		/**
-		 * Show success feedback
+		 * Show success feedback - swap cart icon for checkmark
 		 */
 		showSuccess: function($button) {
-			const originalText = $button.text();
-			$button.text('✓ Added!').addClass('success');
+			// Save original SVG HTML
+			const originalSVG = $button.html();
 
+			// Checkmark SVG (Material Design check icon)
+			const checkmarkSVG = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>';
+
+			// Replace cart icon with checkmark and add success class
+			$button.html(checkmarkSVG).addClass('success');
+
+			// Restore original cart icon after 2 seconds
 			setTimeout(() => {
-				$button.text(originalText).removeClass('success');
+				$button.html(originalSVG).removeClass('success');
 			}, 2000);
 		},
 
@@ -138,13 +145,20 @@
 		 * Show error feedback
 		 */
 		showError: function($button, message) {
-			const originalText = $button.text();
-			$button.text('Error!').addClass('error');
+			// Save original SVG HTML
+			const originalSVG = $button.html();
+
+			// Error X SVG (Material Design close icon)
+			const errorSVG = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>';
+
+			// Replace cart icon with X and add error class
+			$button.html(errorSVG).addClass('error');
 
 			console.error('GHSales Upsell Error:', message);
 
+			// Restore original cart icon after 2 seconds
 			setTimeout(() => {
-				$button.text(originalText).removeClass('error');
+				$button.html(originalSVG).removeClass('error');
 			}, 2000);
 		}
 	};
