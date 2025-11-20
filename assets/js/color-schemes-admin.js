@@ -257,7 +257,11 @@
 	/**
 	 * Reset form to create new scheme mode
 	 */
-	function resetForm() {
+	function resetForm(e) {
+		if (e) {
+			e.preventDefault();
+		}
+
 		// Clear form
 		$('#ghsales-color-scheme-form')[0].reset();
 		$('#scheme-id').val('0');
@@ -275,6 +279,16 @@
 
 		// Hide any messages
 		$('#ghsales-form-message').slideUp();
+
+		// Scroll to editor
+		$('html, body').animate({
+			scrollTop: $('.ghsales-scheme-editor').offset().top - 50
+		}, 500);
+
+		// Focus on name input
+		setTimeout(function() {
+			$('#scheme-name').focus();
+		}, 600);
 	}
 
 	/**
