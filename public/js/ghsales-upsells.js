@@ -241,7 +241,8 @@
 			setTimeout(function() {
 				try {
 					const swiperInstance = new Swiper('#' + containerId + ' .swiper', {
-						slidesPerView: 2,
+						// Use 'auto' to respect CSS widths instead of calculating
+						slidesPerView: 'auto',
 						spaceBetween: 16,
 						centeredSlides: false,
 						slidesPerGroup: 1,
@@ -257,16 +258,6 @@
 							el: '#' + containerId + ' .swiper-pagination',
 							type: 'progressbar',
 							clickable: false
-						},
-						breakpoints: {
-							768: {
-								slidesPerView: 3,
-								spaceBetween: 16
-							},
-							1024: {
-								slidesPerView: 2,
-								spaceBetween: 16
-							}
 						}
 					});
 
