@@ -186,12 +186,36 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
    Ensure product cards work perfectly in minicart
    ======================================== */
 
-/* Let Swiper calculate slide widths (same as gulcan-plugins) */
+/* CRITICAL FIX: Explicit slide widths for slidesPerView: 'auto' */
+/* This prevents Swiper from calculating widths dynamically */
 .ghsales-cart-upsells .swiper-slide,
 .ghsales-special-sales-section .swiper-slide {
-	flex-shrink: 0;
+	flex-shrink: 0 !important;
 	height: auto;
 	position: relative;
+	/* Mobile: 2 slides per view = (100% - 16px gap) / 2 = ~46% */
+	width: calc((100% - 16px) / 2) !important;
+	max-width: calc((100% - 16px) / 2) !important;
+	contain: layout; /* Isolate layout calculations */
+	will-change: transform; /* GPU acceleration */
+}
+
+/* Tablet: 3 slides per view */
+@media (min-width: 768px) {
+	.ghsales-cart-upsells .swiper-slide,
+	.ghsales-special-sales-section .swiper-slide {
+		width: calc((100% - 32px) / 3) !important;
+		max-width: calc((100% - 32px) / 3) !important;
+	}
+}
+
+/* Desktop: 2 slides per view (minicart narrow) */
+@media (min-width: 1024px) {
+	.ghsales-cart-upsells .swiper-slide,
+	.ghsales-special-sales-section .swiper-slide {
+		width: calc((100% - 16px) / 2) !important;
+		max-width: calc((100% - 16px) / 2) !important;
+	}
 }
 
 /* Make sure product cards don't overflow */
@@ -256,7 +280,7 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
 }
 
 .ghsales-upsell-add-to-cart.success {
-	background: #27ae60 !important;
+	background: #0a2329 !important;
 	animation: none;
 	transform: scale(1.05) translateZ(0);
 	transition: all 0.3s ease;

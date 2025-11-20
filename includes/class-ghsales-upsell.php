@@ -65,6 +65,9 @@ class GHSales_Upsell {
 		// Register generic upsells shortcode only (homepage/product use gulcan-plugins widget)
 		add_shortcode( 'ghsales_upsells', array( __CLASS__, 'upsells_shortcode' ) );
 
+		// Register sale products shortcode (for hamburger menu, widgets, etc.)
+		add_shortcode( 'ghsales_sale_products', array( __CLASS__, 'sale_products_shortcode' ) );
+
 		// AJAX handlers for dynamic loading
 		add_action( 'wp_ajax_ghsales_get_upsells', array( __CLASS__, 'ajax_get_upsells' ) );
 		add_action( 'wp_ajax_nopriv_ghsales_get_upsells', array( __CLASS__, 'ajax_get_upsells' ) );
@@ -122,6 +125,10 @@ class GHSales_Upsell {
 
 			case 'homepage':
 				$recommendations = self::generate_homepage_recommendations( $args );
+				break;
+
+			case 'sale':
+				$recommendations = self::generate_sale_recommendations( $args );
 				break;
 
 			default:
@@ -306,6 +313,167 @@ class GHSales_Upsell {
 
 		// Merge duplicate scores
 		$recommendations = self::merge_duplicate_scores( $recommendations );
+
+		return $recommendations;
+	}
+
+	/**
+	 * Generate sale product recommendations
+	 * Shows products from active GHSales sale events and WooCommerce sales
+	 * Uses smart scoring: profit margin + trending + conversion rate + discount depth
+	 *
+	 * @param array $args Arguments (limit, exclude_ids, sale_id)
+	 * @return array Recommendations with scores
+	 */
+	private static function generate_sale_recommendations( $args ) {
+		$recommendations = array();
+
+		// PHASE 1: Get products from active GHSales sale events (highest priority)
+		if ( class_exists( 'GHSales_Sale_Engine' ) ) {
+			$active_events = GHSales_Sale_Engine::get_active_events();
+
+			if ( ! empty( $active_events ) ) {
+				foreach ( $active_events as $event ) {
+					if ( empty( $event->rules ) ) {
+						continue;
+					}
+
+					foreach ( $event->rules as $rule ) {
+						$product_ids = array();
+
+						// Get products based on rule type
+						switch ( $rule->applies_to ) {
+							case 'products':
+								if ( ! empty( $rule->target_ids ) ) {
+									$product_ids = array_map( 'intval', explode( ',', $rule->target_ids ) );
+								}
+								break;
+
+							case 'categories':
+								if ( ! empty( $rule->target_ids ) ) {
+									$category_ids = array_map( 'intval', explode( ',', $rule->target_ids ) );
+									$cat_products = wc_get_products(
+										array(
+											'status'  => 'publish',
+											'category' => $category_ids,
+											'limit'   => 50,
+											'return'  => 'ids',
+										)
+									);
+									$product_ids = $cat_products;
+								}
+								break;
+
+							case 'tags':
+								if ( ! empty( $rule->target_ids ) ) {
+									$tag_ids = array_map( 'intval', explode( ',', $rule->target_ids ) );
+									$tag_products = wc_get_products(
+										array(
+											'status'  => 'publish',
+											'tag'     => $tag_ids,
+											'limit'   => 50,
+											'return'  => 'ids',
+										)
+									);
+									$product_ids = $tag_products;
+								}
+								break;
+						}
+
+						// Add products with GHSales event score
+						foreach ( $product_ids as $product_id ) {
+							if ( ! in_array( $product_id, $args['exclude_ids'] ) ) {
+								$recommendations[] = array(
+									'product_id' => $product_id,
+									'score'      => 100, // Highest priority for active sale events
+									'reason'     => 'ghsales_sale_event',
+								);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// PHASE 2: Get WooCommerce on-sale products with smart scoring
+		$wc_sale_products = wc_get_products(
+			array(
+				'status'   => 'publish',
+				'on_sale'  => true,
+				'limit'    => 50,
+				'exclude'  => $args['exclude_ids'],
+			)
+		);
+
+		foreach ( $wc_sale_products as $product ) {
+			$product_id = $product->get_id();
+
+			// Skip if already in recommendations
+			$already_added = false;
+			foreach ( $recommendations as $rec ) {
+				if ( $rec['product_id'] === $product_id ) {
+					$already_added = true;
+					break;
+				}
+			}
+			if ( $already_added ) {
+				continue;
+			}
+
+			// Base score for being on sale
+			$score = 50;
+
+			// Get product stats for smart scoring
+			$stats = GHSales_Stats::get_product_stats( $product_id );
+
+			// Factor 1: Profit Margin (good for business) +20 points
+			if ( ! empty( $stats['profit_margin'] ) && $stats['profit_margin'] > 30 ) {
+				$score += 20;
+			}
+
+			// Factor 2: Trending (views_7days high) +15 points
+			if ( ! empty( $stats['views_7days'] ) && $stats['views_7days'] > 20 ) {
+				$score += 15;
+			}
+
+			// Factor 3: Conversion Rate (converts well) +15 points
+			if ( ! empty( $stats['views_7days'] ) && $stats['views_7days'] > 0 ) {
+				$conversion_rate = ( $stats['conversions_7days'] ?? 0 ) / $stats['views_7days'];
+				if ( $conversion_rate > 0.1 ) {
+					// 10%+ conversion rate
+					$score += 15;
+				}
+			}
+
+			// Factor 4: Discount Depth (eye-catching) +10 points
+			$regular_price = floatval( $product->get_regular_price() );
+			$sale_price    = floatval( $product->get_sale_price() );
+			if ( $regular_price > 0 && $sale_price > 0 ) {
+				$discount_percent = ( ( $regular_price - $sale_price ) / $regular_price ) * 100;
+				if ( $discount_percent >= 30 ) {
+					$score += 10;
+				} elseif ( $discount_percent >= 20 ) {
+					$score += 5;
+				}
+			}
+
+			$recommendations[] = array(
+				'product_id' => $product_id,
+				'score'      => $score,
+				'reason'     => 'wc_sale_smart_score',
+			);
+		}
+
+		// PHASE 3: Merge duplicate scores and sort
+		$recommendations = self::merge_duplicate_scores( $recommendations );
+
+		// Sort by score (descending)
+		usort(
+			$recommendations,
+			function ( $a, $b ) {
+				return $b['score'] - $a['score'];
+			}
+		);
 
 		return $recommendations;
 	}
@@ -1200,6 +1368,101 @@ class GHSales_Upsell {
 				<?php foreach ( $recommendations as $item ) : ?>
 					<?php self::render_upsell_product( $item['product_id'] ); ?>
 				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Sale products shortcode
+	 *
+	 * Displays products from active GHSales sale events in a carousel.
+	 * Uses smart algorithm to score and sort products by:
+	 * - Profit margin, trending views, conversion rate, discount depth
+	 *
+	 * Usage: [ghsales_sale_products sale_id="42" limit="8" title="Hot Deals"]
+	 *
+	 * @param array $atts Shortcode attributes
+	 * @return string HTML output
+	 */
+	public static function sale_products_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'sale_id' => null,                                    // Optional: specific sale event ID
+				'limit'   => 6,                                       // Number of products
+				'title'   => '',                                      // Section title (auto-fetched from sale if empty)
+				'exclude' => '',                                      // Comma-separated product IDs to exclude
+			),
+			$atts,
+			'ghsales_sale_products'
+		);
+
+		// Parse exclude IDs
+		$exclude_ids = ! empty( $atts['exclude'] ) ? array_map( 'intval', explode( ',', $atts['exclude'] ) ) : array();
+
+		// Auto-fetch sale title if sale_id is provided and title is empty
+		$title = $atts['title'];
+		if ( empty( $title ) && ! empty( $atts['sale_id'] ) ) {
+			$sale_id   = absint( $atts['sale_id'] );
+			$sale_post = get_post( $sale_id );
+			if ( $sale_post && $sale_post->post_type === 'ghsales_event' ) {
+				$title = $sale_post->post_title;
+			}
+		}
+
+		// Default title if still empty
+		if ( empty( $title ) ) {
+			$title = __( 'Speciale Aanbiedingen', 'ghsales' );
+		}
+
+		// Get sale product recommendations using smart algorithm
+		$recommendations = self::get_recommendations(
+			'sale',
+			$atts['sale_id'],
+			array(
+				'limit'       => absint( $atts['limit'] ),
+				'exclude_ids' => $exclude_ids,
+			)
+		);
+
+		// Return empty if no products found
+		if ( empty( $recommendations ) ) {
+			return '';
+		}
+
+		// Generate unique carousel ID
+		static $carousel_counter = 0;
+		$carousel_counter++;
+		$carousel_id = 'ghsales-sale-products-' . $carousel_counter;
+
+		// Render carousel
+		ob_start();
+		?>
+		<div class="ghsales-sale-products-section">
+			<?php if ( ! empty( $title ) ) : ?>
+				<h3 class="ghsales-sale-products-title"><?php echo esc_html( $title ); ?></h3>
+			<?php endif; ?>
+
+			<div id="<?php echo esc_attr( $carousel_id ); ?>" class="ghsales-sale-products gulcan-wc-products-carousel">
+				<div class="gulcan-products-swiper swiper">
+					<div class="swiper-wrapper">
+						<?php foreach ( $recommendations as $item ) : ?>
+							<?php
+							$product = wc_get_product( $item['product_id'] );
+							if ( $product ) :
+								$product_data = self::format_product_for_display( $product );
+								?>
+								<div class="swiper-slide">
+									<?php self::render_product_card( $product_data ); ?>
+								</div>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</div>
+
+					<!-- Progress bar pagination -->
+					<div class="swiper-pagination"></div>
+				</div>
 			</div>
 		</div>
 		<?php

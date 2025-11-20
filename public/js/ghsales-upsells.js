@@ -189,6 +189,18 @@
 
 		GHSalesUpsell.swiperInitializing = true;
 
+		// CRITICAL: Destroy ALL stored instances first (they might be stale after DOM updates)
+		console.log('🎠 GHSales: Destroying all stored Swiper instances (' + Object.keys(GHSalesUpsell.swiperInstances).length + ' total)');
+		for (const instanceId in GHSalesUpsell.swiperInstances) {
+			try {
+				GHSalesUpsell.swiperInstances[instanceId].destroy(true, true);
+				console.log('🎠 GHSales: Destroyed stored instance:', instanceId);
+			} catch (e) {
+				console.error('🎠 GHSales: Error destroying instance ' + instanceId + ':', e);
+			}
+		}
+		GHSalesUpsell.swiperInstances = {}; // Clear all stored instances
+
 		// Check if Swiper library is loaded
 		if (typeof Swiper === 'undefined') {
 			console.error('🎠 GHSales: Swiper library not loaded yet, retrying in 200ms...');
@@ -211,7 +223,7 @@
 		}
 
 		// Find all unique parent containers ONLY within the active minicart drawer
-		const containers = minicartDrawer.querySelectorAll('[id^="ghsales-special-sales-"], [id^="ghsales-cart-upsells-"]');
+		const containers = minicartDrawer.querySelectorAll('[id^="ghsales-special-sales-"], [id^="ghsales-cart-upsells-"], [id^="ghsales-minicart-upsells-"], [id^="ghsales-sale-products-"]');
 		console.log('🎠 GHSales: Found ' + containers.length + ' container sections in minicart drawer');
 
 		containers.forEach(function(container) {
@@ -223,7 +235,19 @@
 				return;
 			}
 
-			console.log('🎠 GHSales: Processing container:', containerId);
+			// CRITICAL FIX: Skip hidden containers (desktop/mobile duplicates)
+			// The cart drawer includes sale-section.php TWICE (desktop + mobile)
+			// Check actual visibility: display !== 'none' AND has dimensions (not during CSS transition)
+			const isVisible = window.getComputedStyle(container).display !== 'none' &&
+			                  container.offsetWidth > 0 &&
+			                  container.offsetHeight > 0;
+
+			if (!isVisible) {
+				console.log('🎠 GHSales: Skipping hidden container:', containerId);
+				return;
+			}
+
+			console.log('🎠 GHSales: Processing visible container:', containerId);
 
 			// Destroy existing instance if stored
 			if (GHSalesUpsell.swiperInstances[containerId]) {
@@ -246,17 +270,33 @@
 				}
 			}
 
-			// Small delay before creating new instance
+			// CRITICAL FIX: Wait for drawer animation to complete (300ms) before initializing
+			// This prevents width calculations during CSS transitions
 			setTimeout(function() {
 				try {
-					// TESTING: Minimal config to isolate width bug
+					// CRITICAL FIX: Use 'auto' to let CSS control widths (Swiper won't calculate)
 					const swiperInstance = new Swiper('#' + containerId + ' .swiper', {
-						// Mobile-first: 2 slides visible
-						slidesPerView: 2,
+						// Let CSS control slide widths
+						slidesPerView: 'auto',
 						spaceBetween: 16,
 						centeredSlides: false,
 						slidesPerGroup: 1,
 						loop: false,
+
+						// DISABLE ALL AUTO-SCROLLING
+						autoplay: false,
+						freeMode: false,
+						freeModeMomentum: false,
+						freeModeSticky: false,
+						autoHeight: false,
+
+						// DISABLE ALL AUTO-UPDATE FEATURES
+						observer: false,
+						observeParents: false,
+						observeSlideChildren: false,
+						resizeObserver: false,
+						updateOnWindowResize: false,
+						watchOverflow: false,
 
 						// DISABLED pagination to test if it's causing width bug
 						// pagination: {
@@ -284,7 +324,7 @@
 						// Callbacks
 						on: {
 							init: function() {
-								console.log('🎠 Swiper initialized (minimal config):', containerId);
+								console.log('🎠 Swiper initialized (ALL auto-updates DISABLED):', containerId);
 							}
 						}
 					});
@@ -319,7 +359,7 @@
 				} catch (error) {
 					console.error('🎠 GHSales: Error creating Swiper for ' + containerId + ':', error);
 				}
-			}, 50);
+			}, 350); // Wait 350ms for drawer animation (300ms) to complete
 		});
 
 		// Reset flag after all processing
@@ -333,9 +373,9 @@
 	GHSalesUpsell.fragmentRefreshTimer = null;
 	GHSalesUpsell.initSwipersCallCount = 0; // Track how many times initSwipers is called
 
-	// Listen for minicart updates to reinitialize Swipers (DEBOUNCED)
-	$(document.body).on('wc_fragments_refreshed wc_fragments_loaded', function(event) {
-		console.log('🎠 GHSales: Fragment event fired:', event.type);
+	// Listen for ALL cart update events to reinitialize Swipers
+	$(document.body).on('wc_fragments_refreshed wc_fragments_loaded added_to_cart removed_from_cart updated_cart_totals', function(event) {
+		console.log('🎠 GHSales: Cart event fired:', event.type);
 
 		// Clear existing timer to debounce rapid events
 		if (GHSalesUpsell.fragmentRefreshTimer) {
@@ -343,11 +383,30 @@
 			clearTimeout(GHSalesUpsell.fragmentRefreshTimer);
 		}
 
-		// Wait 300ms after last event before initializing
+		// Wait 500ms after last event to ensure DOM is fully updated
 		GHSalesUpsell.fragmentRefreshTimer = setTimeout(function() {
-			console.log('🎠 GHSales: Debounced fragment refresh complete, initializing Swipers');
+			console.log('🎠 GHSales: Debounced cart update complete, reinitializing Swipers');
 			GHSalesUpsell.initSwipers();
-		}, 300);
+		}, 500);
+	});
+
+	// CRITICAL FIX: Listen specifically for minicart drawer updates (fires AFTER HTML replacement)
+	// This event is triggered by ghminicart plugin after drawer content is replaced via AJAX
+	$(document).on('ghminicart_drawer_updated', function(event) {
+		console.log('🎠 GHSales: Drawer HTML updated via AJAX, reinitializing Swipers');
+
+		// Clear any pending timers from WooCommerce events to prevent conflicts
+		if (GHSalesUpsell.fragmentRefreshTimer) {
+			console.log('🎠 GHSales: Clearing WooCommerce event timer (drawer update takes priority)');
+			clearTimeout(GHSalesUpsell.fragmentRefreshTimer);
+		}
+
+		// Wait only for drawer animation (400ms = 300ms animation + 100ms buffer)
+		// No debounce needed since drawer HTML is already stable
+		GHSalesUpsell.fragmentRefreshTimer = setTimeout(function() {
+			console.log('🎠 GHSales: Drawer animation complete, initializing Swipers on fresh DOM');
+			GHSalesUpsell.initSwipers();
+		}, 400);
 	});
 
 	// Also initialize on page load if minicart is already present
