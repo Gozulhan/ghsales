@@ -121,36 +121,81 @@ class GHSales_Color_Scheme {
 	 * Output color override CSS
 	 *
 	 * Generates and echoes CSS with Elementor global color variable overrides.
+	 * Supports DYNAMIC colors from colors_json (new) OR legacy columns (backward compatible).
 	 * Uses !important to ensure override of theme/plugin defaults.
 	 *
 	 * @param object $colors Color scheme object from database
 	 * @return void
 	 */
 	private function output_color_css( $colors ) {
+		// Decode colors from JSON if available (new format)
+		$all_colors = array();
+		if ( ! empty( $colors->colors_json ) ) {
+			$all_colors = json_decode( $colors->colors_json, true );
+		}
+
+		// Fallback to legacy columns if JSON not available (backward compatibility)
+		if ( empty( $all_colors ) ) {
+			$all_colors = array(
+				'primary'    => $colors->primary_color,
+				'secondary'  => $colors->secondary_color,
+				'accent'     => $colors->accent_color,
+				'text'       => $colors->text_color,
+				'background' => isset( $colors->background_color ) ? $colors->background_color : '#ffffff',
+			);
+		}
+
+		// Filter out any invalid colors
+		$all_colors = array_filter( $all_colors, function( $color ) {
+			return ! empty( $color ) && preg_match( '/^#[a-fA-F0-9]{6}$/', $color );
+		});
+
+		if ( empty( $all_colors ) ) {
+			error_log( 'GHSales: No valid colors found in scheme ID: ' . $colors->id );
+			return;
+		}
+
 		?>
 <style id="ghsales-color-override">
 :root {
-	/* Elementor Global Colors Override */
-	--e-global-color-primary: <?php echo esc_attr( $colors->primary_color ); ?> !important;
-	--e-global-color-secondary: <?php echo esc_attr( $colors->secondary_color ); ?> !important;
-	--e-global-color-accent: <?php echo esc_attr( $colors->accent_color ); ?> !important;
-	--e-global-color-text: <?php echo esc_attr( $colors->text_color ); ?> !important;
-
-	/* Fallback CSS variables for themes not using Elementor */
-	--primary-color: <?php echo esc_attr( $colors->primary_color ); ?> !important;
-	--secondary-color: <?php echo esc_attr( $colors->secondary_color ); ?> !important;
-	--accent-color: <?php echo esc_attr( $colors->accent_color ); ?> !important;
-	--text-color: <?php echo esc_attr( $colors->text_color ); ?> !important;
+	<?php
+	// Output ALL colors as Elementor global color variables
+	foreach ( $all_colors as $color_id => $color_hex ) :
+		$sanitized_id = sanitize_key( $color_id );
+		?>
+	/* <?php echo esc_html( ucfirst( $color_id ) ); ?> Color */
+	--e-global-color-<?php echo esc_attr( $sanitized_id ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
+	--<?php echo esc_attr( $sanitized_id ); ?>-color: <?php echo esc_attr( $color_hex ); ?> !important;
+	--<?php echo esc_attr( $sanitized_id ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
+	<?php endforeach; ?>
 }
 
 /* High-specificity override for stubborn themes */
 body {
-	--primary: <?php echo esc_attr( $colors->primary_color ); ?> !important;
-	--secondary: <?php echo esc_attr( $colors->secondary_color ); ?> !important;
-	--accent: <?php echo esc_attr( $colors->accent_color ); ?> !important;
+	<?php foreach ( $all_colors as $color_id => $color_hex ) : ?>
+	--<?php echo esc_attr( sanitize_key( $color_id ) ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
+	<?php endforeach; ?>
 }
+
+/* Additional compatibility for Elementor custom colors */
+<?php
+foreach ( $all_colors as $color_id => $color_hex ) :
+	// Only add custom color overrides (not system colors to avoid duplication)
+	if ( ! in_array( $color_id, array( 'primary', 'secondary', 'accent', 'text' ), true ) ) :
+		?>
+.elementor-widget-heading .elementor-heading-title[class*="elementor-color-<?php echo esc_attr( sanitize_key( $color_id ) ); ?>"],
+.elementor-widget-button .elementor-button[class*="elementor-color-<?php echo esc_attr( sanitize_key( $color_id ) ); ?>"] {
+	color: <?php echo esc_attr( $color_hex ); ?> !important;
+}
+	<?php
+	endif;
+endforeach;
+?>
 </style>
 		<?php
+
+		// Log injected colors for debugging
+		error_log( 'GHSales: Injected ' . count( $all_colors ) . ' colors for scheme ID: ' . $colors->id );
 	}
 
 	/**
@@ -204,6 +249,7 @@ body {
 
 		// Query for active sale with color scheme
 		// Joins: posts → start_date → end_date → color_scheme_id → color_schemes table
+		// Now includes colors_json for dynamic color support
 		$result = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -214,6 +260,7 @@ body {
 					cs.accent_color,
 					cs.text_color,
 					cs.background_color,
+					cs.colors_json,
 					p.ID as event_id,
 					p.post_title as event_title,
 					pm1.meta_value as start_date,
