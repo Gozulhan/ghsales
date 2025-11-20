@@ -426,22 +426,25 @@ class GHSales_Upsell {
 			// Get product stats for smart scoring
 			$stats = GHSales_Stats::get_product_stats( $product_id );
 
-			// Factor 1: Profit Margin (good for business) +20 points
-			if ( ! empty( $stats['profit_margin'] ) && $stats['profit_margin'] > 30 ) {
-				$score += 20;
-			}
+			// Only apply smart scoring if stats exist
+			if ( $stats ) {
+				// Factor 1: Profit Margin (good for business) +20 points
+				if ( ! empty( $stats->profit_margin ) && $stats->profit_margin > 30 ) {
+					$score += 20;
+				}
 
-			// Factor 2: Trending (views_7days high) +15 points
-			if ( ! empty( $stats['views_7days'] ) && $stats['views_7days'] > 20 ) {
-				$score += 15;
-			}
-
-			// Factor 3: Conversion Rate (converts well) +15 points
-			if ( ! empty( $stats['views_7days'] ) && $stats['views_7days'] > 0 ) {
-				$conversion_rate = ( $stats['conversions_7days'] ?? 0 ) / $stats['views_7days'];
-				if ( $conversion_rate > 0.1 ) {
-					// 10%+ conversion rate
+				// Factor 2: Trending (views_7days high) +15 points
+				if ( ! empty( $stats->views_7days ) && $stats->views_7days > 20 ) {
 					$score += 15;
+				}
+
+				// Factor 3: Conversion Rate (converts well) +15 points
+				if ( ! empty( $stats->views_7days ) && $stats->views_7days > 0 ) {
+					$conversion_rate = ( $stats->conversions_7days ?? 0 ) / $stats->views_7days;
+					if ( $conversion_rate > 0.1 ) {
+						// 10%+ conversion rate
+						$score += 15;
+					}
 				}
 			}
 
