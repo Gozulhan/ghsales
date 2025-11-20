@@ -33,18 +33,23 @@
 		 */
 		handleAddToCart: function(e) {
 			e.preventDefault();
+			console.log('GHSales Upsell: Add to cart button clicked');
 
 			const $button = $(e.currentTarget);
 			const productId = $button.data('product-id');
+			console.log('GHSales Upsell: Product ID:', productId);
 
 			if (!productId || $button.hasClass('loading')) {
+				console.warn('GHSales Upsell: No product ID or button is loading, aborting');
 				return;
 			}
 
 			// Set loading state
 			$button.addClass('loading').prop('disabled', true);
+			console.log('GHSales Upsell: Button set to loading state');
 
 			// Add to cart via AJAX
+			console.log('GHSales Upsell: Sending AJAX request to:', wc_add_to_cart_params.ajax_url);
 			$.ajax({
 				url: wc_add_to_cart_params.ajax_url,
 				type: 'POST',
@@ -54,27 +59,36 @@
 					quantity: 1
 				},
 				success: (response) => {
+					console.log('GHSales Upsell: AJAX success response:', response);
 					if (response.error) {
+						console.error('GHSales Upsell: Error in response:', response.error);
 						this.showError($button, response.error);
 						return;
 					}
 
 					// Success - trigger cart update
+					console.log('GHSales Upsell: Triggering added_to_cart event');
 					$(document.body).trigger('added_to_cart', [response.fragments, response.cart_hash, $button]);
 
 					// Show success feedback
+					console.log('GHSales Upsell: Showing success feedback');
 					this.showSuccess($button);
 
 					// Reload fragments (mini cart content)
+					console.log('GHSales Upsell: Triggering wc_fragment_refresh');
 					$(document.body).trigger('wc_fragment_refresh');
 				},
-				error: () => {
+				error: (xhr, status, error) => {
+					console.error('GHSales Upsell: AJAX error:', status, error);
+					console.error('GHSales Upsell: XHR object:', xhr);
 					this.showError($button, 'Failed to add product to cart');
 				},
 				complete: () => {
+					console.log('GHSales Upsell: AJAX request complete');
 					// Remove loading state after delay
 					setTimeout(() => {
 						$button.removeClass('loading').prop('disabled', false);
+						console.log('GHSales Upsell: Loading state removed from button');
 					}, 1000);
 				}
 			});

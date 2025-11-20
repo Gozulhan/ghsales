@@ -71,6 +71,18 @@ class GHSales_Upsell {
 
 		// Cleanup expired cache (daily cron)
 		add_action( 'ghsales_cleanup_expired_cache', array( __CLASS__, 'cleanup_expired_cache' ) );
+
+		// Cache invalidation on cart changes
+		// Clear cache when items are added to cart
+		add_action( 'woocommerce_add_to_cart', array( __CLASS__, 'clear_cart_cache' ), 10, 0 );
+		// Clear cache when items are removed from cart
+		add_action( 'woocommerce_cart_item_removed', array( __CLASS__, 'clear_cart_cache' ), 10, 0 );
+		// Clear cache when cart is emptied
+		add_action( 'woocommerce_cart_emptied', array( __CLASS__, 'clear_cart_cache' ), 10, 0 );
+		// Clear cache when quantity changes to zero
+		add_action( 'woocommerce_before_cart_item_quantity_zero', array( __CLASS__, 'clear_cart_cache' ), 10, 0 );
+		// Clear cache on cart update (quantity changes)
+		add_action( 'woocommerce_update_cart_action_cart_updated', array( __CLASS__, 'clear_cart_cache' ), 10, 0 );
 	}
 
 	/**
@@ -684,6 +696,34 @@ class GHSales_Upsell {
 	}
 
 	/**
+	 * Clear cart context cache for current user/session
+	 * Called when cart contents change to ensure fresh recommendations
+	 *
+	 * @return void
+	 */
+	public static function clear_cart_cache() {
+		global $wpdb;
+
+		$user_id = get_current_user_id();
+		$session_id = GHSales_Tracker::get_session_id();
+
+		// Delete cart-context cache for current user/session
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}ghsales_upsell_cache
+				WHERE context_type = 'cart'
+				AND (user_id = %d OR session_id = %s)",
+				$user_id ? $user_id : 0,
+				$session_id
+			)
+		);
+
+		if ( $deleted ) {
+			error_log( "GHSales: Cleared cart cache for user {$user_id} / session {$session_id} - {$deleted} entries deleted" );
+		}
+	}
+
+	/**
 	 * Render cart upsells in mini cart
 	 * Hooked to: ghminicart_sale_section_content
 	 *
@@ -1089,8 +1129,8 @@ class GHSales_Upsell {
 					echo '<span class="gulcan-product-sale">' . __( 'Sale', 'ghsales' ) . '</span>';
 				}
 				?>
-				<!-- Quick Add to Cart Button (gulcan-plugins AJAX handler) -->
-				<button class="gulcan-quick-add-cart"
+				<!-- Quick Add to Cart Button (ghsales AJAX handler) -->
+				<button class="ghsales-upsell-add-to-cart"
 						data-product-id="<?php echo esc_attr( $product_data['id'] ); ?>"
 						data-product-url="<?php echo esc_url( $product_data['add_to_cart_url'] ); ?>"
 						title="<?php esc_attr_e( 'Quick Add to Cart', 'ghsales' ); ?>">

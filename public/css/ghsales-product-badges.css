@@ -1,0 +1,133 @@
+/**
+ * GHSales Product Badges CSS
+ *
+ * High-specificity styles to override WooCommerce default badge styling
+ * This ensures our custom badge styles persist after product page navigation
+ *
+ * @package GHSales
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   Base Badge Overrides - High Specificity
+   ========================================================================== */
+
+/* Override WooCommerce default .onsale styling */
+body .onsale.ghsales-badge,
+body span.onsale.ghsales-badge {
+	position: absolute !important;
+	top: 10px !important;
+	right: 10px !important;
+	left: auto !important;
+	margin: 0 !important;
+	background-color: #e74c3c !important;
+	color: #ffffff !important;
+	padding: 5px 10px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+	border-radius: 3px !important;
+	z-index: 10 !important;
+	line-height: 1.4 !important;
+	text-align: center !important;
+	min-width: 50px !important;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* BOGO Badge Specific Styling */
+body .onsale.ghsales-bogo-product-badge,
+body span.onsale.ghsales-bogo-product-badge {
+	background-color: #27ae60 !important;
+	background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+}
+
+/* Discount Badge Specific Styling */
+body .onsale.ghsales-discount-product-badge,
+body span.onsale.ghsales-discount-product-badge {
+	background-color: #e74c3c !important;
+	background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+}
+
+/* ==========================================================================
+   Elementor Theme Specific Overrides
+   ========================================================================== */
+
+/* Target Elementor Kit (adjust kit ID if different) */
+body.elementor-kit-64 .onsale.ghsales-badge,
+body.elementor-kit-64 span.onsale.ghsales-badge,
+.elementor-widget-woocommerce-products .onsale.ghsales-badge {
+	position: absolute !important;
+	top: 10px !important;
+	right: 10px !important;
+	left: auto !important;
+	margin: 0 !important;
+	background-color: #e74c3c !important;
+	color: #ffffff !important;
+	padding: 5px 10px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+	border-radius: 3px !important;
+	z-index: 10 !important;
+	line-height: 1.4 !important;
+}
+
+/* ==========================================================================
+   Product Page Specific Overrides
+   ========================================================================== */
+
+/* Single product page badge positioning */
+.single-product .onsale.ghsales-badge,
+.single-product span.onsale.ghsales-badge {
+	top: 15px !important;
+	right: 15px !important;
+	padding: 8px 12px !important;
+	font-size: 14px !important;
+}
+
+/* Product grid/archive badges */
+.woocommerce ul.products li.product .onsale.ghsales-badge,
+.woocommerce-page ul.products li.product .onsale.ghsales-badge {
+	top: 10px !important;
+	right: 10px !important;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	body .onsale.ghsales-badge,
+	body span.onsale.ghsales-badge {
+		font-size: 11px !important;
+		padding: 4px 8px !important;
+		min-width: 45px !important;
+	}
+
+	.single-product .onsale.ghsales-badge,
+	.single-product span.onsale.ghsales-badge {
+		top: 10px !important;
+		right: 10px !important;
+		font-size: 12px !important;
+		padding: 6px 10px !important;
+	}
+}
+
+@media (max-width: 480px) {
+	body .onsale.ghsales-badge,
+	body span.onsale.ghsales-badge {
+		font-size: 10px !important;
+		padding: 3px 6px !important;
+		min-width: 40px !important;
+	}
+}
+
+/* ==========================================================================
+   Hover Effects
+   ========================================================================== */
+
+body .onsale.ghsales-badge:hover,
+body span.onsale.ghsales-badge:hover {
+	transform: scale(1.05) !important;
+	transition: transform 0.2s ease !important;
+}

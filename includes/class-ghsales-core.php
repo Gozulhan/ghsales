@@ -308,6 +308,16 @@ class GHSales_Core {
 			$has_gulcan_mobile = true;
 		}
 
+		// Product badges CSS - High-specificity styles to override WooCommerce badge styling
+		$badges_css_path = GHSALES_PLUGIN_DIR . 'public/css/ghsales-product-badges.css';
+		if ( file_exists( $badges_css_path ) ) {
+			$badges_css_version = filemtime( $badges_css_path );
+			wp_enqueue_style( 'ghsales-product-badges', GHSALES_PLUGIN_URL . 'public/css/ghsales-product-badges.css', array(), $badges_css_version );
+			error_log( 'GHSales: Enqueued product badges CSS - path: ' . $badges_css_path . ', version: ' . $badges_css_version );
+		} else {
+			error_log( 'GHSales: WARNING - Product badges CSS file not found at: ' . $badges_css_path );
+		}
+
 		// Upsell styles with cache busting - NO DEPENDENCIES to ensure it always loads
 		$upsells_css_path = GHSALES_PLUGIN_DIR . 'public/css/ghsales-upsells.css';
 		if ( file_exists( $upsells_css_path ) ) {
