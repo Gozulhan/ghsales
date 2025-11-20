@@ -790,7 +790,14 @@ class GHSales_Upsell {
 				setTimeout(function() {
 					if (typeof Swiper !== 'undefined') {
 						var swiperEl = document.querySelector('#<?php echo esc_js( $widget_id ); ?> .swiper');
-						if (swiperEl && !swiperEl.swiper) {
+						if (swiperEl) {
+							// Destroy existing Swiper instance if it exists
+							if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
+								console.log('Destroying existing Swiper instance');
+								swiperEl.swiper.destroy(true, true);
+							}
+
+							// Create new Swiper instance
 							new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
 								slidesPerView: 2,
 								spaceBetween: 16,
@@ -959,7 +966,14 @@ class GHSales_Upsell {
 				setTimeout(function() {
 					if (typeof Swiper !== 'undefined') {
 						var swiperEl = document.querySelector('#<?php echo esc_js( $widget_id ); ?> .swiper');
-						if (swiperEl && !swiperEl.swiper) {
+						if (swiperEl) {
+							// Destroy existing Swiper instance if it exists
+							if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
+								console.log('Destroying existing Swiper instance');
+								swiperEl.swiper.destroy(true, true);
+							}
+
+							// Create new Swiper instance
 							new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
 								slidesPerView: 2,
 								spaceBetween: 16,
