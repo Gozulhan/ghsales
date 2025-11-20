@@ -3,7 +3,7 @@
  * Plugin Name: GH Sales
  * Plugin URI: https://gulcanhome.eu
  * Description: Comprehensive WordPress/WooCommerce plugin for sales event management, intelligent upselling, and sitewide visual theming with user tracking.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Gulcan Home Development Team
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Define plugin constants
  * These constants are used throughout the plugin for paths, URLs, and versioning
  */
-define( 'GHSALES_VERSION', '1.0.12' );
+define( 'GHSALES_VERSION', '1.1.0' );
 define( 'GHSALES_PLUGIN_FILE', __FILE__ );
 define( 'GHSALES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GHSALES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

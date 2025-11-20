@@ -81,6 +81,10 @@ class GHSales_Core {
 		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-sale-engine.php';
 		GHSales_Sale_Engine::init();
 
+		// Load Color Scheme Manager (frontend color override during sales)
+		require_once GHSALES_PLUGIN_DIR . 'includes/class-ghsales-color-scheme.php';
+		GHSales_Color_Scheme::init();
+
 		// Load admin components
 		if ( is_admin() ) {
 			// Sale Event custom post type
