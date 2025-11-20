@@ -173,12 +173,24 @@
 	 * Initialize Swiper carousels in minicart
 	 * Called after minicart AJAX updates
 	 */
+	GHSalesUpsell.swiperInitializing = false; // Flag to prevent concurrent initializations
+	GHSalesUpsell.swiperInstances = {}; // Store Swiper instances by container ID
+
 	GHSalesUpsell.initSwipers = function() {
 		console.log('🎠 GHSales: initSwipers() called');
+
+		// Prevent concurrent initialization
+		if (GHSalesUpsell.swiperInitializing) {
+			console.warn('🎠 GHSales: Swiper initialization already in progress, skipping');
+			return;
+		}
+
+		GHSalesUpsell.swiperInitializing = true;
 
 		// Check if Swiper library is loaded
 		if (typeof Swiper === 'undefined') {
 			console.error('🎠 GHSales: Swiper library not loaded yet, retrying in 200ms...');
+			GHSalesUpsell.swiperInitializing = false;
 			setTimeout(function() {
 				GHSalesUpsell.initSwipers();
 			}, 200);
@@ -187,57 +199,82 @@
 
 		console.log('🎠 GHSales: Swiper library loaded, initializing carousels');
 
-		// Find all Swiper containers in minicart
-		const swiperContainers = document.querySelectorAll('.ghsales-cart-upsells .swiper, .ghsales-special-sales-section .swiper');
-		console.log('🎠 GHSales: Found ' + swiperContainers.length + ' Swiper containers');
+		// Find all unique parent containers (not individual .swiper elements)
+		const containers = document.querySelectorAll('[id^="ghsales-special-sales-"], [id^="ghsales-cart-upsells-"]');
+		console.log('🎠 GHSales: Found ' + containers.length + ' container sections');
 
-		swiperContainers.forEach(function(swiperEl) {
-			// Get the parent container to find unique ID
-			const parentSection = swiperEl.closest('[id^="ghsales-"]');
-			if (!parentSection) {
-				console.warn('🎠 GHSales: Swiper container has no parent section, skipping');
+		containers.forEach(function(container) {
+			const containerId = container.id;
+			const swiperEl = container.querySelector('.swiper');
+
+			if (!swiperEl) {
+				console.warn('🎠 GHSales: No .swiper found in container:', containerId);
 				return;
 			}
 
-			const containerId = parentSection.id;
-			const selector = '#' + containerId + ' .swiper';
-			console.log('🎠 GHSales: Initializing Swiper for:', selector);
+			console.log('🎠 GHSales: Processing container:', containerId);
 
-			// Destroy existing instance if it exists
-			if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
-				console.log('🎠 GHSales: Destroying existing Swiper instance');
-				swiperEl.swiper.destroy(true, true);
+			// Destroy existing instance if stored
+			if (GHSalesUpsell.swiperInstances[containerId]) {
+				console.log('🎠 GHSales: Destroying stored Swiper instance for:', containerId);
+				try {
+					GHSalesUpsell.swiperInstances[containerId].destroy(true, true);
+					delete GHSalesUpsell.swiperInstances[containerId];
+				} catch (e) {
+					console.error('🎠 GHSales: Error destroying stored instance:', e);
+				}
 			}
 
-			// Create new Swiper instance
-			try {
-				new Swiper(selector, {
-					slidesPerView: 2,
-					spaceBetween: 16,
-					centeredSlides: false,
-					slidesPerGroup: 1,
-					loop: false,
-					pagination: {
-						el: '#' + containerId + ' .swiper-pagination',
-						type: 'progressbar',
-						clickable: false
-					},
-					breakpoints: {
-						768: {
-							slidesPerView: 3,
-							spaceBetween: 16
+			// Also check element's swiper property
+			if (swiperEl.swiper) {
+				console.log('🎠 GHSales: Destroying element Swiper instance for:', containerId);
+				try {
+					swiperEl.swiper.destroy(true, true);
+				} catch (e) {
+					console.error('🎠 GHSales: Error destroying element instance:', e);
+				}
+			}
+
+			// Small delay before creating new instance
+			setTimeout(function() {
+				try {
+					const swiperInstance = new Swiper('#' + containerId + ' .swiper', {
+						slidesPerView: 2,
+						spaceBetween: 16,
+						centeredSlides: false,
+						slidesPerGroup: 1,
+						loop: false,
+						pagination: {
+							el: '#' + containerId + ' .swiper-pagination',
+							type: 'progressbar',
+							clickable: false
 						},
-						1024: {
-							slidesPerView: 2,
-							spaceBetween: 16
+						breakpoints: {
+							768: {
+								slidesPerView: 3,
+								spaceBetween: 16
+							},
+							1024: {
+								slidesPerView: 2,
+								spaceBetween: 16
+							}
 						}
-					}
-				});
-				console.log('🎠 GHSales: Swiper created successfully for:', containerId);
-			} catch (error) {
-				console.error('🎠 GHSales: Error creating Swiper:', error);
-			}
+					});
+
+					// Store instance reference
+					GHSalesUpsell.swiperInstances[containerId] = swiperInstance;
+					console.log('🎠 GHSales: Swiper created successfully for:', containerId);
+				} catch (error) {
+					console.error('🎠 GHSales: Error creating Swiper for ' + containerId + ':', error);
+				}
+			}, 50);
 		});
+
+		// Reset flag after all processing
+		setTimeout(function() {
+			GHSalesUpsell.swiperInitializing = false;
+			console.log('🎠 GHSales: Swiper initialization complete');
+		}, 200);
 	};
 
 	// Listen for minicart updates to reinitialize Swipers
