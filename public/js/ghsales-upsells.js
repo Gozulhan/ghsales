@@ -31,10 +31,22 @@
 		bindEvents: function() {
 			console.log('GHSales Upsell: Binding event handlers to .ghsales-upsell-add-to-cart');
 
-			// Use delegated event binding so it works with dynamically loaded content
-			$(document).on('click', '.ghsales-upsell-add-to-cart', this.handleAddToCart.bind(this));
+			// Bind in CAPTURING phase to prevent minicart from intercepting
+			// Use native addEventListener instead of jQuery to access capturing phase
+			document.addEventListener('click', (e) => {
+				const button = e.target.closest('.ghsales-upsell-add-to-cart');
+				if (button) {
+					console.log('GHSales Upsell: Click captured in CAPTURING phase');
+					e.preventDefault();
+					e.stopPropagation();
+					this.handleAddToCart({
+						preventDefault: () => {},
+						currentTarget: button
+					});
+				}
+			}, true); // true = use capturing phase
 
-			console.log('GHSales Upsell: Event handlers bound successfully');
+			console.log('GHSales Upsell: Event handlers bound successfully (CAPTURING PHASE)');
 
 			// Check if buttons exist on page
 			const buttonCount = $('.ghsales-upsell-add-to-cart').length;
