@@ -783,62 +783,6 @@ class GHSales_Upsell {
 				</div>
 			</div>
 
-			<script>
-			// Initialize Swiper for minicart upsells (AJAX-loaded content)
-			// Use setTimeout since this runs in AJAX response, DOMContentLoaded already fired
-			(function() {
-				console.log('🎠 Swiper init script running for: <?php echo esc_js( $widget_id ); ?>');
-				setTimeout(function() {
-					console.log('🎠 setTimeout fired, checking Swiper...');
-					console.log('🎠 Swiper defined?', typeof Swiper !== 'undefined');
-
-					if (typeof Swiper !== 'undefined') {
-						var selector = '#<?php echo esc_js( $widget_id ); ?> .swiper';
-						console.log('🎠 Looking for element:', selector);
-						var swiperEl = document.querySelector(selector);
-						console.log('🎠 Element found?', !!swiperEl);
-
-						if (swiperEl) {
-							// Destroy existing Swiper instance if it exists
-							if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
-								console.log('🎠 Destroying existing Swiper instance');
-								swiperEl.swiper.destroy(true, true);
-							}
-
-							// Create new Swiper instance
-							console.log('🎠 Creating new Swiper instance');
-							new Swiper(selector, {
-								slidesPerView: 2,
-								spaceBetween: 16,
-								centeredSlides: false,
-								slidesPerGroup: 1,
-								loop: false,
-								pagination: {
-									el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
-									type: 'progressbar',
-									clickable: false
-								},
-								breakpoints: {
-									768: {
-										slidesPerView: 3,
-										spaceBetween: 16
-									},
-									1024: {
-										slidesPerView: 2,
-										spaceBetween: 16
-									}
-								}
-							});
-							console.log('🎠 Swiper created successfully');
-						} else {
-							console.error('🎠 ERROR: Swiper element not found:', selector);
-						}
-					} else {
-						console.error('🎠 ERROR: Swiper library not loaded');
-					}
-				}, 100);
-			})();
-			</script>
 		</div>
 		<?php
 	}
@@ -973,62 +917,6 @@ class GHSales_Upsell {
 				</div>
 			</div>
 
-			<script>
-			// Initialize Swiper for special sales (AJAX-loaded content)
-			// Use setTimeout since this runs in AJAX response, DOMContentLoaded already fired
-			(function() {
-				console.log('🎠 SPECIAL SALES Swiper init script running for: <?php echo esc_js( $widget_id ); ?>');
-				setTimeout(function() {
-					console.log('🎠 SPECIAL SALES setTimeout fired, checking Swiper...');
-					console.log('🎠 SPECIAL SALES Swiper defined?', typeof Swiper !== 'undefined');
-
-					if (typeof Swiper !== 'undefined') {
-						var selector = '#<?php echo esc_js( $widget_id ); ?> .swiper';
-						console.log('🎠 SPECIAL SALES Looking for element:', selector);
-						var swiperEl = document.querySelector(selector);
-						console.log('🎠 SPECIAL SALES Element found?', !!swiperEl);
-
-						if (swiperEl) {
-							// Destroy existing Swiper instance if it exists
-							if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
-								console.log('🎠 SPECIAL SALES Destroying existing Swiper instance');
-								swiperEl.swiper.destroy(true, true);
-							}
-
-							// Create new Swiper instance
-							console.log('🎠 SPECIAL SALES Creating new Swiper instance');
-							new Swiper(selector, {
-								slidesPerView: 2,
-								spaceBetween: 16,
-								centeredSlides: false,
-								slidesPerGroup: 1,
-								loop: false,
-								pagination: {
-									el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
-									type: 'progressbar',
-									clickable: false
-								},
-								breakpoints: {
-									768: {
-										slidesPerView: 3,
-										spaceBetween: 16
-									},
-									1024: {
-										slidesPerView: 2,
-										spaceBetween: 16
-									}
-								}
-							});
-							console.log('🎠 SPECIAL SALES Swiper created successfully');
-						} else {
-							console.error('🎠 SPECIAL SALES ERROR: Swiper element not found:', selector);
-						}
-					} else {
-						console.error('🎠 SPECIAL SALES ERROR: Swiper library not loaded');
-					}
-				}, 100);
-			})();
-			</script>
 		</div>
 		<?php
 

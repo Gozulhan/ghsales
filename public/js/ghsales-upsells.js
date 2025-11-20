@@ -169,4 +169,92 @@
 		GHSalesUpsell.init();
 	});
 
+	/**
+	 * Initialize Swiper carousels in minicart
+	 * Called after minicart AJAX updates
+	 */
+	GHSalesUpsell.initSwipers = function() {
+		console.log('🎠 GHSales: initSwipers() called');
+
+		// Check if Swiper library is loaded
+		if (typeof Swiper === 'undefined') {
+			console.error('🎠 GHSales: Swiper library not loaded yet, retrying in 200ms...');
+			setTimeout(function() {
+				GHSalesUpsell.initSwipers();
+			}, 200);
+			return;
+		}
+
+		console.log('🎠 GHSales: Swiper library loaded, initializing carousels');
+
+		// Find all Swiper containers in minicart
+		const swiperContainers = document.querySelectorAll('.ghsales-cart-upsells .swiper, .ghsales-special-sales-section .swiper');
+		console.log('🎠 GHSales: Found ' + swiperContainers.length + ' Swiper containers');
+
+		swiperContainers.forEach(function(swiperEl) {
+			// Get the parent container to find unique ID
+			const parentSection = swiperEl.closest('[id^="ghsales-"]');
+			if (!parentSection) {
+				console.warn('🎠 GHSales: Swiper container has no parent section, skipping');
+				return;
+			}
+
+			const containerId = parentSection.id;
+			const selector = '#' + containerId + ' .swiper';
+			console.log('🎠 GHSales: Initializing Swiper for:', selector);
+
+			// Destroy existing instance if it exists
+			if (swiperEl.swiper && typeof swiperEl.swiper.destroy === 'function') {
+				console.log('🎠 GHSales: Destroying existing Swiper instance');
+				swiperEl.swiper.destroy(true, true);
+			}
+
+			// Create new Swiper instance
+			try {
+				new Swiper(selector, {
+					slidesPerView: 2,
+					spaceBetween: 16,
+					centeredSlides: false,
+					slidesPerGroup: 1,
+					loop: false,
+					pagination: {
+						el: '#' + containerId + ' .swiper-pagination',
+						type: 'progressbar',
+						clickable: false
+					},
+					breakpoints: {
+						768: {
+							slidesPerView: 3,
+							spaceBetween: 16
+						},
+						1024: {
+							slidesPerView: 2,
+							spaceBetween: 16
+						}
+					}
+				});
+				console.log('🎠 GHSales: Swiper created successfully for:', containerId);
+			} catch (error) {
+				console.error('🎠 GHSales: Error creating Swiper:', error);
+			}
+		});
+	};
+
+	// Listen for minicart updates to reinitialize Swipers
+	$(document.body).on('wc_fragments_refreshed wc_fragments_loaded', function() {
+		console.log('🎠 GHSales: Minicart fragments updated, reinitializing Swipers');
+		// Small delay to ensure DOM is updated
+		setTimeout(function() {
+			GHSalesUpsell.initSwipers();
+		}, 100);
+	});
+
+	// Also initialize on page load if minicart is already present
+	$(document).ready(function() {
+		console.log('🎠 GHSales: Document ready, checking for existing Swipers');
+		setTimeout(function() {
+			GHSalesUpsell.initSwipers();
+		}, 500);
+	});
+
 })(jQuery);
