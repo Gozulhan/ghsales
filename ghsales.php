@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Define plugin constants
  * These constants are used throughout the plugin for paths, URLs, and versioning
  */
-define( 'GHSALES_VERSION', '1.0.0' );
+define( 'GHSALES_VERSION', '1.0.1' );
 define( 'GHSALES_PLUGIN_FILE', __FILE__ );
 define( 'GHSALES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GHSALES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
