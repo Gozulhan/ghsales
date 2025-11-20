@@ -177,11 +177,13 @@
 	GHSalesUpsell.swiperInstances = {}; // Store Swiper instances by container ID
 
 	GHSalesUpsell.initSwipers = function() {
-		console.log('🎠 GHSales: initSwipers() called');
+		GHSalesUpsell.initSwipersCallCount++;
+		console.log('🎠 GHSales: initSwipers() called (call #' + GHSalesUpsell.initSwipersCallCount + ')');
+		console.trace('🎠 GHSales: Call stack:');
 
 		// Prevent concurrent initialization
 		if (GHSalesUpsell.swiperInitializing) {
-			console.warn('🎠 GHSales: Swiper initialization already in progress, skipping');
+			console.warn('🎠 GHSales: Swiper initialization already in progress, skipping (call #' + GHSalesUpsell.initSwipersCallCount + ')');
 			return;
 		}
 
@@ -264,6 +266,30 @@
 					// Store instance reference
 					GHSalesUpsell.swiperInstances[containerId] = swiperInstance;
 					console.log('🎠 GHSales: Swiper created successfully for:', containerId);
+
+					// Monitor slide width for 5 seconds to detect runaway growth
+					const slideEl = swiperEl.querySelector('.swiper-slide');
+					if (slideEl) {
+						let widthCheckCount = 0;
+						let lastWidth = slideEl.offsetWidth;
+						console.log('🎠 GHSales: Initial slide width for ' + containerId + ':', lastWidth + 'px');
+
+						const widthMonitor = setInterval(function() {
+							widthCheckCount++;
+							const currentWidth = slideEl.offsetWidth;
+
+							if (currentWidth !== lastWidth) {
+								console.warn('🎠 GHSales: WIDTH CHANGED for ' + containerId + '! Old: ' + lastWidth + 'px, New: ' + currentWidth + 'px (check #' + widthCheckCount + ')');
+								lastWidth = currentWidth;
+							}
+
+							// Stop monitoring after 10 checks (5 seconds)
+							if (widthCheckCount >= 10) {
+								clearInterval(widthMonitor);
+								console.log('🎠 GHSales: Width monitoring stopped for ' + containerId + '. Final width: ' + currentWidth + 'px');
+							}
+						}, 500);
+					}
 				} catch (error) {
 					console.error('🎠 GHSales: Error creating Swiper for ' + containerId + ':', error);
 				}
@@ -277,13 +303,25 @@
 		}, 200);
 	};
 
-	// Listen for minicart updates to reinitialize Swipers
-	$(document.body).on('wc_fragments_refreshed wc_fragments_loaded', function() {
-		console.log('🎠 GHSales: Minicart fragments updated, reinitializing Swipers');
-		// Small delay to ensure DOM is updated
-		setTimeout(function() {
+	// Debounce timer for fragment refresh events
+	GHSalesUpsell.fragmentRefreshTimer = null;
+	GHSalesUpsell.initSwipersCallCount = 0; // Track how many times initSwipers is called
+
+	// Listen for minicart updates to reinitialize Swipers (DEBOUNCED)
+	$(document.body).on('wc_fragments_refreshed wc_fragments_loaded', function(event) {
+		console.log('🎠 GHSales: Fragment event fired:', event.type);
+
+		// Clear existing timer to debounce rapid events
+		if (GHSalesUpsell.fragmentRefreshTimer) {
+			console.log('🎠 GHSales: Clearing previous timer (debouncing)');
+			clearTimeout(GHSalesUpsell.fragmentRefreshTimer);
+		}
+
+		// Wait 300ms after last event before initializing
+		GHSalesUpsell.fragmentRefreshTimer = setTimeout(function() {
+			console.log('🎠 GHSales: Debounced fragment refresh complete, initializing Swipers');
 			GHSalesUpsell.initSwipers();
-		}, 100);
+		}, 300);
 	});
 
 	// Also initialize on page load if minicart is already present
