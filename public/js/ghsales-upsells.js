@@ -201,9 +201,18 @@
 
 		console.log('🎠 GHSales: Swiper library loaded, initializing carousels');
 
-		// Find all unique parent containers (not individual .swiper elements)
-		const containers = document.querySelectorAll('[id^="ghsales-special-sales-"], [id^="ghsales-cart-upsells-"]');
-		console.log('🎠 GHSales: Found ' + containers.length + ' container sections');
+		// CRITICAL FIX: Only find containers INSIDE the currently visible minicart drawer
+		// This prevents initializing on cached/hidden fragments
+		const minicartDrawer = document.querySelector('.ghminicart-drawer');
+		if (!minicartDrawer) {
+			console.warn('🎠 GHSales: No minicart drawer found, aborting');
+			GHSalesUpsell.swiperInitializing = false;
+			return;
+		}
+
+		// Find all unique parent containers ONLY within the active minicart drawer
+		const containers = minicartDrawer.querySelectorAll('[id^="ghsales-special-sales-"], [id^="ghsales-cart-upsells-"]');
+		console.log('🎠 GHSales: Found ' + containers.length + ' container sections in minicart drawer');
 
 		containers.forEach(function(container) {
 			const containerId = container.id;
