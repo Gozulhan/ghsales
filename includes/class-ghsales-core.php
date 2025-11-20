@@ -90,6 +90,14 @@ class GHSales_Core {
 			// Sale Event custom post type
 			require_once GHSALES_PLUGIN_DIR . 'admin/class-ghsales-event-cpt.php';
 			GHSales_Event_CPT::init();
+
+			// Analytics Dashboard
+			require_once GHSALES_PLUGIN_DIR . 'admin/class-ghsales-analytics-page.php';
+			GHSales_Analytics_Page::init();
+
+			// Color Schemes Manager (admin page for custom color schemes)
+			require_once GHSALES_PLUGIN_DIR . 'admin/class-ghsales-color-schemes-page.php';
+			GHSales_Color_Schemes_Page::init();
 		}
 	}
 	/**

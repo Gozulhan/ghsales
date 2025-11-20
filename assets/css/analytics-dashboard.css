@@ -1,0 +1,523 @@
+/**
+ * GHSales Analytics Dashboard Styles
+ *
+ * Modern, beautiful styling for the analytics dashboard admin page.
+ *
+ * @package GHSales
+ * @since 1.1.0
+ */
+
+/* === Dashboard Wrap === */
+.ghsales-analytics-wrap {
+	max-width: 1400px;
+	margin: 20px auto;
+	padding: 0 20px;
+}
+
+.ghsales-analytics-wrap .wp-heading-inline {
+	font-size: 28px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-bottom: 8px;
+}
+
+.ghsales-version {
+	display: inline-block;
+	font-size: 12px;
+	font-weight: 400;
+	color: #8c8f94;
+	background: #f0f0f1;
+	padding: 3px 8px;
+	border-radius: 3px;
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
+.ghsales-subtitle {
+	color: #646970;
+	font-size: 14px;
+	margin-top: 0;
+	margin-bottom: 20px;
+}
+
+/* === Overview Cards Grid === */
+.ghsales-overview-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.ghsales-stat-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 20px;
+	display: flex;
+	align-items: flex-start;
+	gap: 15px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: all 0.3s ease;
+}
+
+.ghsales-stat-card:hover {
+	border-color: #2271b1;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+}
+
+.ghsales-stat-icon {
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ghsales-stat-icon .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+
+/* Card Color Variants */
+.ghsales-stat-primary .ghsales-stat-icon {
+	background: #e0f0ff;
+	color: #2271b1;
+}
+
+.ghsales-stat-success .ghsales-stat-icon {
+	background: #d5f2e3;
+	color: #00a32a;
+}
+
+.ghsales-stat-info .ghsales-stat-icon {
+	background: #fff0e0;
+	color: #f0a000;
+}
+
+.ghsales-stat-warning .ghsales-stat-icon {
+	background: #ffebe0;
+	color: #f56e28;
+}
+
+.ghsales-stat-revenue .ghsales-stat-icon {
+	background: #e5e0ff;
+	color: #6e28f5;
+}
+
+.ghsales-stat-secondary .ghsales-stat-icon {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.ghsales-stat-content h3 {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.2;
+}
+
+.ghsales-stat-content p {
+	margin: 4px 0 2px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #646970;
+}
+
+.ghsales-stat-period {
+	font-size: 12px;
+	color: #8c8f94;
+}
+
+/* === Dashboard Grid Layout === */
+.ghsales-dashboard-grid {
+	display: grid;
+	grid-template-columns: 1fr 350px;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.ghsales-dashboard-main {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.ghsales-dashboard-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.ghsales-dashboard-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ghsales-dashboard-section h2 {
+	margin: 0 0 15px;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* === Tabs === */
+.ghsales-tabs {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 20px;
+	border-bottom: 2px solid #f0f0f1;
+	padding-bottom: 0;
+}
+
+.ghsales-tab {
+	background: transparent;
+	border: none;
+	padding: 10px 16px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #646970;
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	transition: all 0.2s ease;
+}
+
+.ghsales-tab:hover {
+	color: #2271b1;
+}
+
+.ghsales-tab.active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+.ghsales-tab-content {
+	display: none;
+}
+
+.ghsales-tab-content.active {
+	display: block;
+}
+
+.ghsales-tab-description {
+	background: #fff0e0;
+	border-left: 3px solid #f0a000;
+	padding: 12px 15px;
+	margin: 0 0 15px;
+	font-size: 13px;
+	color: #646970;
+}
+
+/* === Tables === */
+.ghsales-analytics-table {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+.ghsales-analytics-table thead {
+	background: #f6f7f7;
+	border-bottom: 2px solid #dcdcde;
+}
+
+.ghsales-analytics-table th {
+	text-align: left;
+	padding: 12px 15px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.ghsales-analytics-table td {
+	padding: 12px 15px;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.ghsales-analytics-table tbody tr:hover {
+	background: #f6f7f7;
+}
+
+.ghsales-analytics-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Product Cell with Thumbnail */
+.ghsales-product-cell {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ghsales-product-cell img {
+	flex-shrink: 0;
+	width: 50px;
+	height: 50px;
+	object-fit: cover;
+	border-radius: 4px;
+	border: 1px solid #dcdcde;
+}
+
+.ghsales-product-cell a {
+	color: #2271b1;
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.ghsales-product-cell a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+/* === Activity Breakdown === */
+.ghsales-activity-breakdown {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ghsales-activity-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 12px;
+	background: #f6f7f7;
+	border-radius: 4px;
+	border-left: 3px solid #2271b1;
+}
+
+.ghsales-activity-label {
+	font-size: 13px;
+	font-weight: 500;
+	color: #646970;
+}
+
+.ghsales-activity-count {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* === Activity Feed === */
+.ghsales-live-indicator {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #00a32a;
+	margin-left: 8px;
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+.ghsales-activity-feed {
+	max-height: 500px;
+	overflow-y: auto;
+	padding-right: 10px;
+}
+
+/* Custom Scrollbar */
+.ghsales-activity-feed::-webkit-scrollbar {
+	width: 8px;
+}
+
+.ghsales-activity-feed::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.ghsales-activity-feed::-webkit-scrollbar-thumb {
+	background: #c3c4c7;
+	border-radius: 4px;
+}
+
+.ghsales-activity-feed::-webkit-scrollbar-thumb:hover {
+	background: #8c8f94;
+}
+
+.ghsales-activity-entry {
+	display: flex;
+	gap: 12px;
+	padding: 12px;
+	margin-bottom: 10px;
+	background: #f6f7f7;
+	border-radius: 6px;
+	border-left: 3px solid #2271b1;
+	transition: all 0.2s ease;
+}
+
+.ghsales-activity-entry:hover {
+	background: #e9ecef;
+}
+
+.ghsales-activity-icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+}
+
+.ghsales-activity-content {
+	flex: 1;
+}
+
+.ghsales-activity-content p {
+	margin: 0 0 4px;
+	font-size: 13px;
+	color: #1d2327;
+	line-height: 1.5;
+}
+
+.ghsales-activity-time {
+	font-size: 12px;
+	color: #8c8f94;
+}
+
+.ghsales-no-activity {
+	text-align: center;
+	color: #8c8f94;
+	padding: 40px 20px;
+	font-size: 14px;
+}
+
+/* === Responsive Design === */
+@media screen and (max-width: 1200px) {
+	.ghsales-dashboard-grid {
+		grid-template-columns: 1fr 300px;
+	}
+}
+
+@media screen and (max-width: 900px) {
+	.ghsales-dashboard-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.ghsales-dashboard-sidebar {
+		order: -1;
+	}
+
+	.ghsales-overview-cards {
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	}
+
+	.ghsales-stat-card {
+		flex-direction: column;
+		text-align: center;
+	}
+
+	.ghsales-stat-icon {
+		margin: 0 auto;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.ghsales-analytics-wrap {
+		padding: 0 10px;
+	}
+
+	.ghsales-overview-cards {
+		grid-template-columns: 1fr;
+	}
+
+	.ghsales-tabs {
+		flex-wrap: wrap;
+	}
+
+	.ghsales-tab {
+		font-size: 12px;
+		padding: 8px 12px;
+	}
+
+	.ghsales-analytics-table th,
+	.ghsales-analytics-table td {
+		padding: 8px 10px;
+		font-size: 12px;
+	}
+
+	.ghsales-product-cell img {
+		width: 40px;
+		height: 40px;
+	}
+}
+
+/* === Loading States === */
+.ghsales-loading {
+	opacity: 0.6;
+	pointer-events: none;
+	position: relative;
+}
+
+.ghsales-loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 32px;
+	height: 32px;
+	border: 3px solid #f0f0f1;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+/* === Empty States === */
+.ghsales-empty-state {
+	text-align: center;
+	padding: 60px 20px;
+	color: #8c8f94;
+}
+
+.ghsales-empty-state .dashicons {
+	font-size: 64px;
+	width: 64px;
+	height: 64px;
+	color: #c3c4c7;
+	margin-bottom: 16px;
+}
+
+.ghsales-empty-state h3 {
+	font-size: 18px;
+	color: #646970;
+	margin-bottom: 8px;
+}
+
+.ghsales-empty-state p {
+	font-size: 14px;
+	max-width: 400px;
+	margin: 0 auto;
+}
