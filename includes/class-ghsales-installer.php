@@ -34,6 +34,11 @@ class GHSales_Installer {
 		// Create/update database tables
 		self::create_tables();
 
+		// Run upgrade routines for existing installations
+		if ( ! empty( $installed_version ) ) {
+			self::upgrade_database( $installed_version );
+		}
+
 		// Seed default data (only on first install)
 		if ( empty( $installed_version ) ) {
 			self::seed_default_data();
@@ -47,6 +52,40 @@ class GHSales_Installer {
 
 		// Trigger activation hook for other components
 		do_action( 'ghsales_activated' );
+	}
+
+	/**
+	 * Upgrade database schema for existing installations
+	 *
+	 * @param string $installed_version Currently installed version
+	 * @return void
+	 */
+	public static function upgrade_database( $installed_version ) {
+		global $wpdb;
+
+		// Add colors_json column if it doesn't exist (added in version 1.2.0)
+		$table_name = $wpdb->prefix . 'ghsales_color_schemes';
+		$column_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+				WHERE TABLE_SCHEMA = %s
+				AND TABLE_NAME = %s
+				AND COLUMN_NAME = 'colors_json'",
+				DB_NAME,
+				$table_name
+			)
+		);
+
+		if ( empty( $column_exists ) ) {
+			$wpdb->query(
+				"ALTER TABLE {$table_name}
+				ADD COLUMN colors_json LONGTEXT DEFAULT NULL
+				COMMENT 'JSON storage for all Elementor colors (system + custom)'
+				AFTER background_color"
+			);
+
+			error_log( 'GHSales: Added colors_json column to color_schemes table' );
+		}
 	}
 
 	/**
