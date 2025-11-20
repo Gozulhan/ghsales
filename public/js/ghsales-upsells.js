@@ -246,6 +246,13 @@
 						centeredSlides: false,
 						slidesPerGroup: 1,
 						loop: false,
+						// Disable all automatic updates/observers to prevent runaway width growth
+						observer: false,
+						observeParents: false,
+						observeSlideChildren: false,
+						resizeObserver: false,
+						updateOnWindowResize: false,
+						// Pagination
 						pagination: {
 							el: '#' + containerId + ' .swiper-pagination',
 							type: 'progressbar',
