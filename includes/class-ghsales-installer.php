@@ -132,6 +132,7 @@ class GHSales_Installer {
 			accent_color VARCHAR(7) NOT NULL,
 			text_color VARCHAR(7) NOT NULL,
 			background_color VARCHAR(7) NOT NULL,
+			colors_json LONGTEXT DEFAULT NULL COMMENT 'JSON storage for all Elementor colors (system + custom)',
 			is_active TINYINT(1) NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (id),

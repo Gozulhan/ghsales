@@ -160,46 +160,67 @@ class GHSales_Color_Schemes_Page {
 	}
 
 	/**
-	 * Detect Elementor global colors
+	 * Detect ALL Elementor global colors (system + custom)
 	 *
-	 * @return array Colors array
+	 * @return array All colors with structure: [color_id => ['color' => '#hex', 'title' => 'Name', 'type' => 'system'|'custom']]
 	 */
 	public static function detect_elementor_colors() {
-		$colors = array(
-			'primary'   => '#000000',
-			'secondary' => '#000000',
-			'accent'    => '#000000',
-			'text'      => '#000000',
-		);
+		$all_colors = array();
 
 		// Get Elementor Kit ID
 		$kit_id = get_option( 'elementor_active_kit' );
 
 		if ( ! $kit_id ) {
-			return $colors;
+			return $all_colors;
 		}
 
 		// Get Kit settings
 		$kit_settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
 
-		if ( empty( $kit_settings ) || ! isset( $kit_settings['system_colors'] ) ) {
-			return $colors;
+		if ( empty( $kit_settings ) ) {
+			return $all_colors;
 		}
 
-		// Extract system colors
-		foreach ( $kit_settings['system_colors'] as $color_item ) {
-			$color_id = $color_item['_id'];
+		// Extract SYSTEM colors
+		if ( ! empty( $kit_settings['system_colors'] ) ) {
+			foreach ( $kit_settings['system_colors'] as $color_item ) {
+				if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
+					$color_id    = $color_item['_id'];
+					$hex_color   = $color_item['color'];
+					$color_title = isset( $color_item['title'] ) ? $color_item['title'] : ucfirst( $color_id );
 
-			if ( isset( $colors[ $color_id ] ) ) {
-				$colors[ $color_id ] = $color_item['color'];
+					$all_colors[ $color_id ] = array(
+						'color' => $hex_color,
+						'title' => $color_title,
+						'type'  => 'system',
+					);
+				}
 			}
 		}
 
-		return $colors;
+		// Extract CUSTOM colors
+		if ( ! empty( $kit_settings['custom_colors'] ) ) {
+			foreach ( $kit_settings['custom_colors'] as $color_item ) {
+				if ( isset( $color_item['_id'] ) && isset( $color_item['color'] ) ) {
+					$color_id    = $color_item['_id'];
+					$hex_color   = $color_item['color'];
+					$color_title = isset( $color_item['title'] ) ? $color_item['title'] : $color_id;
+
+					$all_colors[ $color_id ] = array(
+						'color' => $hex_color,
+						'title' => $color_title,
+						'type'  => 'custom',
+					);
+				}
+			}
+		}
+
+		return $all_colors;
 	}
 
 	/**
 	 * AJAX: Save color scheme (create or update)
+	 * Stores ALL colors as JSON for full flexibility
 	 *
 	 * @return void
 	 */
@@ -215,30 +236,41 @@ class GHSales_Color_Schemes_Page {
 		global $wpdb;
 
 		// Get and sanitize input
-		$scheme_id        = isset( $_POST['scheme_id'] ) ? intval( $_POST['scheme_id'] ) : 0;
-		$scheme_name      = isset( $_POST['scheme_name'] ) ? sanitize_text_field( $_POST['scheme_name'] ) : '';
-		$primary_color    = isset( $_POST['primary_color'] ) ? sanitize_hex_color( $_POST['primary_color'] ) : '';
-		$secondary_color  = isset( $_POST['secondary_color'] ) ? sanitize_hex_color( $_POST['secondary_color'] ) : '';
-		$accent_color     = isset( $_POST['accent_color'] ) ? sanitize_hex_color( $_POST['accent_color'] ) : '';
-		$text_color       = isset( $_POST['text_color'] ) ? sanitize_hex_color( $_POST['text_color'] ) : '';
-		$background_color = isset( $_POST['background_color'] ) ? sanitize_hex_color( $_POST['background_color'] ) : '#ffffff';
+		$scheme_id   = isset( $_POST['scheme_id'] ) ? intval( $_POST['scheme_id'] ) : 0;
+		$scheme_name = isset( $_POST['scheme_name'] ) ? sanitize_text_field( $_POST['scheme_name'] ) : '';
+		$colors_data = isset( $_POST['colors'] ) ? $_POST['colors'] : array();
 
 		// Validation
 		if ( empty( $scheme_name ) ) {
 			wp_send_json_error( 'Scheme name is required' );
 		}
 
-		if ( empty( $primary_color ) || empty( $secondary_color ) || empty( $accent_color ) || empty( $text_color ) ) {
-			wp_send_json_error( 'All color fields are required' );
+		if ( empty( $colors_data ) || ! is_array( $colors_data ) ) {
+			wp_send_json_error( 'No colors provided' );
 		}
 
+		// Sanitize all colors
+		$sanitized_colors = array();
+		foreach ( $colors_data as $color_id => $color_value ) {
+			$sanitized_hex = sanitize_hex_color( $color_value );
+			if ( $sanitized_hex ) {
+				$sanitized_colors[ sanitize_key( $color_id ) ] = $sanitized_hex;
+			}
+		}
+
+		if ( empty( $sanitized_colors ) ) {
+			wp_send_json_error( 'No valid colors provided' );
+		}
+
+		// Prepare data array with backward compatibility for basic 5 colors
 		$data = array(
 			'scheme_name'      => $scheme_name,
-			'primary_color'    => $primary_color,
-			'secondary_color'  => $secondary_color,
-			'accent_color'     => $accent_color,
-			'text_color'       => $text_color,
-			'background_color' => $background_color,
+			'primary_color'    => isset( $sanitized_colors['primary'] ) ? $sanitized_colors['primary'] : '#000000',
+			'secondary_color'  => isset( $sanitized_colors['secondary'] ) ? $sanitized_colors['secondary'] : '#000000',
+			'accent_color'     => isset( $sanitized_colors['accent'] ) ? $sanitized_colors['accent'] : '#000000',
+			'text_color'       => isset( $sanitized_colors['text'] ) ? $sanitized_colors['text'] : '#000000',
+			'background_color' => isset( $sanitized_colors['background'] ) ? $sanitized_colors['background'] : '#ffffff',
+			'colors_json'      => wp_json_encode( $sanitized_colors ), // Store ALL colors as JSON
 		);
 
 		if ( $scheme_id > 0 ) {
@@ -247,7 +279,7 @@ class GHSales_Color_Schemes_Page {
 				$wpdb->prefix . 'ghsales_color_schemes',
 				$data,
 				array( 'id' => $scheme_id ),
-				array( '%s', '%s', '%s', '%s', '%s', '%s' ),
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 				array( '%d' )
 			);
 
@@ -267,7 +299,7 @@ class GHSales_Color_Schemes_Page {
 			$result = $wpdb->insert(
 				$wpdb->prefix . 'ghsales_color_schemes',
 				$data,
-				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 			);
 
 			if ( false === $result ) {

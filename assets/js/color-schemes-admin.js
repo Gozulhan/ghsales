@@ -1,8 +1,8 @@
 /**
  * Color Schemes Manager Admin JavaScript
  *
- * Handles color picker initialization, live preview updates,
- * and AJAX operations for color scheme CRUD.
+ * Handles DYNAMIC color picker initialization, live preview updates,
+ * and AJAX operations for ALL Elementor colors (system + custom).
  *
  * @package GHSales
  * @since 1.2.0
@@ -20,19 +20,25 @@
 	}
 
 	/**
-	 * Initialize WordPress color pickers
+	 * Initialize WordPress color pickers for ALL dynamic color inputs
 	 */
 	function initColorPickers() {
 		$('.ghsales-color-picker').wpColorPicker({
 			change: function(event, ui) {
-				// Update live preview when color changes
-				updateLivePreview($(this), ui.color.toString());
+				// Get the color ID from data attribute
+				var colorId = $(this).data('color-id');
+				var colorHex = ui.color.toString();
+
+				// Update live preview
+				updateLivePreview(colorId, colorHex);
 			},
 			clear: function() {
 				// Reset to default color when cleared
 				var $input = $(this);
 				var defaultColor = $input.data('default-color');
-				updateLivePreview($input, defaultColor);
+				var colorId = $input.data('color-id');
+
+				updateLivePreview(colorId, defaultColor);
 			}
 		});
 	}
@@ -40,34 +46,13 @@
 	/**
 	 * Update live preview swatch when color changes
 	 *
-	 * @param {jQuery} $input Color picker input
+	 * @param {string} colorId Color ID (e.g., 'primary', 'custom-1')
 	 * @param {string} color Hex color value
 	 */
-	function updateLivePreview($input, color) {
-		var fieldId = $input.attr('id');
-		var previewId = '';
+	function updateLivePreview(colorId, color) {
+		var previewId = '#preview-' + colorId;
 
-		// Map input ID to preview swatch ID
-		switch(fieldId) {
-			case 'primary-color':
-				previewId = '#preview-primary';
-				break;
-			case 'secondary-color':
-				previewId = '#preview-secondary';
-				break;
-			case 'accent-color':
-				previewId = '#preview-accent';
-				break;
-			case 'text-color':
-				previewId = '#preview-text';
-				break;
-			case 'background-color':
-				previewId = '#preview-background';
-				break;
-		}
-
-		// Update preview swatch background color
-		if (previewId) {
+		if ($(previewId).length) {
 			$(previewId).css('background-color', color);
 		}
 	}
@@ -91,12 +76,13 @@
 		// Delete scheme buttons
 		$(document).on('click', '.ghsales-delete-scheme', handleDeleteScheme);
 
-		// Pre-fill from Elementor button
-		$('#ghsales-prefill-elementor').on('click', handlePrefillElementor);
+		// Pre-fill/Reset from Elementor button
+		$('#ghsales-prefill-elementor').on('click', handleResetToElementor);
 	}
 
 	/**
 	 * Handle form submission (create or update)
+	 * Collects ALL dynamic colors and sends as array
 	 *
 	 * @param {Event} e Form submit event
 	 */
@@ -111,17 +97,30 @@
 			return;
 		}
 
-		// Collect form data
+		// Collect ALL colors from dynamic color pickers
+		var colors = {};
+		$('.ghsales-color-picker').each(function() {
+			var colorId = $(this).data('color-id');
+			var colorValue = $(this).val();
+
+			if (colorId && colorValue) {
+				colors[colorId] = colorValue;
+			}
+		});
+
+		// Check if we have any colors
+		if (Object.keys(colors).length === 0) {
+			showMessage('Please set at least one color', 'error');
+			return;
+		}
+
+		// Prepare form data
 		var formData = {
 			action: 'ghsales_save_color_scheme',
 			nonce: ghsalesColorSchemes.nonce,
 			scheme_id: $('#scheme-id').val(),
 			scheme_name: schemeName,
-			primary_color: $('#primary-color').val(),
-			secondary_color: $('#secondary-color').val(),
-			accent_color: $('#accent-color').val(),
-			text_color: $('#text-color').val(),
-			background_color: $('#background-color').val()
+			colors: colors
 		};
 
 		// Show loading state
@@ -145,55 +144,44 @@
 				} else {
 					showMessage(response.data || ghsalesColorSchemes.strings.error, 'error');
 					$form.removeClass('ghsales-loading');
-					$('#ghsales-save-scheme').prop('disabled', false).text(ghsalesColorSchemes.strings.saveButton || 'Save Color Scheme');
+					$('#ghsales-save-scheme').prop('disabled', false).text('Save Color Scheme');
 				}
 			},
 			error: function() {
 				showMessage(ghsalesColorSchemes.strings.error, 'error');
 				$form.removeClass('ghsales-loading');
-				$('#ghsales-save-scheme').prop('disabled', false).text(ghsalesColorSchemes.strings.saveButton || 'Save Color Scheme');
+				$('#ghsales-save-scheme').prop('disabled', false).text('Save Color Scheme');
 			}
 		});
 	}
 
 	/**
 	 * Handle edit scheme button click
+	 * Loads saved colors from data attribute and populates dynamic form
 	 */
 	function handleEditScheme() {
 		var schemeId = $(this).data('scheme-id');
-
-		// Get scheme data from table row
 		var $row = $(this).closest('tr');
 		var schemeName = $row.find('strong').text().trim();
-		var $swatches = $row.find('.ghsales-color-swatch');
 
-		// Populate form
+		// Get saved colors from data attribute (JSON)
+		var savedColors = $row.data('colors');
+
+		// Populate form fields
 		$('#scheme-id').val(schemeId);
 		$('#scheme-name').val(schemeName);
 
-		// Extract colors from swatches and update form
-		$swatches.each(function(index) {
-			var color = $(this).css('background-color');
-			var hexColor = rgbToHex(color);
+		// Update ALL dynamic color pickers with saved values
+		if (savedColors && typeof savedColors === 'object') {
+			$.each(savedColors, function(colorId, colorHex) {
+				var $colorInput = $('#color-' + colorId);
 
-			switch(index) {
-				case 0: // Primary
-					$('#primary-color').wpColorPicker('color', hexColor);
-					break;
-				case 1: // Secondary
-					$('#secondary-color').wpColorPicker('color', hexColor);
-					break;
-				case 2: // Accent
-					$('#accent-color').wpColorPicker('color', hexColor);
-					break;
-				case 3: // Text
-					$('#text-color').wpColorPicker('color', hexColor);
-					break;
-				case 4: // Background
-					$('#background-color').wpColorPicker('color', hexColor);
-					break;
-			}
-		});
+				if ($colorInput.length) {
+					// Update color picker value
+					$colorInput.wpColorPicker('color', colorHex);
+				}
+			});
+		}
 
 		// Update UI for editing mode
 		$('#ghsales-editor-title').text('Edit Color Scheme');
@@ -250,50 +238,20 @@
 	}
 
 	/**
-	 * Handle pre-fill from Elementor button click
+	 * Handle reset to Elementor colors button click
+	 * Resets ALL color pickers to their default Elementor values
 	 */
-	function handlePrefillElementor() {
-		var $button = $(this);
-		$button.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Loading...');
+	function handleResetToElementor() {
+		// Reset all color pickers to their default values
+		$('.ghsales-color-picker').each(function() {
+			var defaultColor = $(this).data('default-color');
 
-		// Get Elementor colors via AJAX
-		$.ajax({
-			url: ghsalesColorSchemes.ajaxUrl,
-			type: 'POST',
-			data: {
-				action: 'ghsales_get_elementor_colors',
-				nonce: ghsalesColorSchemes.nonce
-			},
-			success: function(response) {
-				if (response.success && response.data) {
-					var colors = response.data;
-
-					// Update color pickers with Elementor colors
-					if (colors.primary) {
-						$('#primary-color').wpColorPicker('color', colors.primary);
-					}
-					if (colors.secondary) {
-						$('#secondary-color').wpColorPicker('color', colors.secondary);
-					}
-					if (colors.accent) {
-						$('#accent-color').wpColorPicker('color', colors.accent);
-					}
-					if (colors.text) {
-						$('#text-color').wpColorPicker('color', colors.text);
-					}
-
-					showMessage('Colors pre-filled from Elementor', 'success');
-				} else {
-					showMessage('Could not load Elementor colors', 'error');
-				}
-
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-admin-appearance"></span> Pre-fill from Elementor');
-			},
-			error: function() {
-				showMessage('Error loading Elementor colors', 'error');
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-admin-appearance"></span> Pre-fill from Elementor');
+			if (defaultColor) {
+				$(this).wpColorPicker('color', defaultColor);
 			}
 		});
+
+		showMessage('Colors reset to Elementor defaults', 'success');
 	}
 
 	/**
@@ -304,7 +262,7 @@
 		$('#ghsales-color-scheme-form')[0].reset();
 		$('#scheme-id').val('0');
 
-		// Reset color pickers to defaults
+		// Reset ALL color pickers to defaults
 		$('.ghsales-color-picker').each(function() {
 			var defaultColor = $(this).data('default-color');
 			$(this).wpColorPicker('color', defaultColor);
@@ -340,33 +298,6 @@
 				$messageBox.slideUp();
 			}, 5000);
 		}
-	}
-
-	/**
-	 * Convert RGB color to Hex
-	 *
-	 * @param {string} rgb RGB color string (e.g., "rgb(255, 0, 0)")
-	 * @return {string} Hex color string (e.g., "#ff0000")
-	 */
-	function rgbToHex(rgb) {
-		// Handle already hex colors
-		if (rgb.indexOf('#') === 0) {
-			return rgb;
-		}
-
-		// Extract RGB values
-		var matches = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-		if (!matches) {
-			return '#000000';
-		}
-
-		// Convert to hex
-		function toHex(num) {
-			var hex = parseInt(num).toString(16);
-			return hex.length === 1 ? '0' + hex : hex;
-		}
-
-		return '#' + toHex(matches[1]) + toHex(matches[2]) + toHex(matches[3]);
 	}
 
 	/**

@@ -144,17 +144,64 @@
 }
 
 /* ===========================
+   Color Section Titles
+   =========================== */
+.ghsales-color-section-title {
+	margin-top: 25px;
+	margin-bottom: 15px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	border-bottom: 2px solid #2271b1;
+	padding-bottom: 8px;
+}
+
+.ghsales-color-section-title:first-of-type {
+	margin-top: 15px;
+}
+
+.ghsales-detected-colors-info {
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	padding: 12px 15px;
+	margin-bottom: 20px;
+}
+
+.ghsales-detected-colors-info .description {
+	margin: 0;
+	font-weight: 500;
+}
+
+/* ===========================
    Color Picker Fields
    =========================== */
 .ghsales-color-fields {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	gap: 20px;
 	margin-bottom: 25px;
 }
 
 .ghsales-color-picker-field {
 	margin-bottom: 0;
+}
+
+.ghsales-color-picker-field label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.ghsales-color-id {
+	font-size: 11px;
+	color: #646970;
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-weight: normal;
 }
 
 .ghsales-color-picker {
@@ -201,15 +248,13 @@
 }
 
 .ghsales-preview-swatches {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
 	gap: 15px;
-	flex-wrap: wrap;
 }
 
 .ghsales-preview-swatch {
 	text-align: center;
-	flex: 1;
-	min-width: 80px;
 }
 
 .ghsales-preview-swatch .swatch-box {
@@ -227,11 +272,22 @@
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
-.ghsales-preview-swatch span {
+.ghsales-preview-swatch .swatch-title {
 	display: block;
 	font-size: 12px;
+	color: #1d2327;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.ghsales-preview-swatch .swatch-id {
+	display: block;
+	font-size: 10px;
 	color: #646970;
-	font-weight: 500;
+	background: #f0f0f1;
+	padding: 2px 4px;
+	border-radius: 2px;
+	margin-top: 4px;
 }
 
 /* ===========================
