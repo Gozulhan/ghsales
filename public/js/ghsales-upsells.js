@@ -240,22 +240,21 @@
 			// Small delay before creating new instance
 			setTimeout(function() {
 				try {
-					// Use EXACT same config as gulcan-plugins (which works perfectly)
+					// TESTING: Minimal config to isolate width bug
 					const swiperInstance = new Swiper('#' + containerId + ' .swiper', {
 						// Mobile-first: 2 slides visible
 						slidesPerView: 2,
 						spaceBetween: 16,
 						centeredSlides: false,
 						slidesPerGroup: 1,
-						grabCursor: true,
 						loop: false,
 
-						// Pagination - progress bar style
-						pagination: {
-							el: '#' + containerId + ' .swiper-pagination',
-							type: 'progressbar',
-							clickable: false
-						},
+						// DISABLED pagination to test if it's causing width bug
+						// pagination: {
+						// 	el: '#' + containerId + ' .swiper-pagination',
+						// 	type: 'progressbar',
+						// 	clickable: false
+						// },
 
 						// Breakpoints for responsive behavior
 						breakpoints: {
@@ -269,17 +268,14 @@
 							}
 						},
 
-						// Ensure proper slide visibility tracking (critical!)
-						watchSlidesProgress: true,
-						watchSlidesVisibility: true,
+						// DISABLED to test if causing width bug
+						// watchSlidesProgress: true,
+						// watchSlidesVisibility: true,
 
-						// Callbacks to ensure proper updates
+						// Callbacks
 						on: {
 							init: function() {
-								console.log('🎠 Swiper initialized:', containerId);
-							},
-							slideChange: function() {
-								this.update();
+								console.log('🎠 Swiper initialized (minimal config):', containerId);
 							}
 						}
 					});
