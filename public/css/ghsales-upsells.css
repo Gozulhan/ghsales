@@ -200,19 +200,90 @@ body .ghsales-cart-upsells-section h3.ghsales-upsells-title,
 	object-fit: cover;
 }
 
-/* Quick add to cart button visibility */
-.ghsales-cart-upsells .gulcan-quick-add-cart {
+/* ========================================
+   QUICK ADD TO CART BUTTON STYLING
+   ======================================== */
+
+/* Base button styling - same as gulcan-plugins */
+.ghsales-upsell-add-to-cart {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	width: 40px;
+	height: 40px;
+	background: #4A3F35;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	z-index: 2;
+	border: none;
+	padding: 0;
+	/* iOS Safari fix - force GPU acceleration */
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+	will-change: transform;
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+}
+
+.ghsales-upsell-add-to-cart:hover {
+	background: #0a2329;
+	transform: scale(1.1) translateZ(0);
+	-webkit-transform: scale(1.1) translateZ(0);
+}
+
+.ghsales-upsell-add-to-cart:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.ghsales-upsell-add-to-cart.loading {
+	animation: pulse 1s infinite;
+}
+
+.ghsales-upsell-add-to-cart.success {
+	background: #4A3F35;
+	animation: none;
+	transform: scale(1);
+}
+
+.ghsales-upsell-add-to-cart.error {
+	background: #e74c3c;
+}
+
+.ghsales-upsell-add-to-cart svg {
+	width: 22px;
+	height: 22px;
+	fill: white;
+}
+
+@keyframes pulse {
+	0% { opacity: 1; }
+	50% { opacity: 0.6; }
+	100% { opacity: 1; }
+}
+
+/* Quick add to cart button visibility in minicart carousel */
+.ghsales-cart-upsells .ghsales-upsell-add-to-cart {
 	opacity: 0;
 	transition: opacity 0.2s ease;
 }
 
-.ghsales-cart-upsells .gulcan-product-image-container:hover .gulcan-quick-add-cart {
+.ghsales-cart-upsells .gulcan-product-image-container:hover .ghsales-upsell-add-to-cart {
 	opacity: 1;
 }
 
 /* Mobile: Always show add to cart button */
 @media (max-width: 768px) {
-	.ghsales-cart-upsells .gulcan-quick-add-cart {
+	.ghsales-cart-upsells .ghsales-upsell-add-to-cart {
 		opacity: 1;
+	}
+
+	.ghsales-upsell-add-to-cart {
+		width: 36px;
+		height: 36px;
 	}
 }
