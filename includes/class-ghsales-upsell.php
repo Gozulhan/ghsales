@@ -784,33 +784,39 @@ class GHSales_Upsell {
 			</div>
 
 			<script>
-			// Initialize Swiper for minicart upsells
-			document.addEventListener('DOMContentLoaded', function() {
-				if (typeof Swiper !== 'undefined') {
-					new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
-						slidesPerView: 2,
-						spaceBetween: 16,
-						centeredSlides: false,
-						slidesPerGroup: 1,
-						loop: false,
-						pagination: {
-							el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
-							type: 'progressbar',
-							clickable: false
-						},
-						breakpoints: {
-							768: {
-								slidesPerView: 3,
-								spaceBetween: 16
-							},
-							1024: {
+			// Initialize Swiper for minicart upsells (AJAX-loaded content)
+			// Use setTimeout since this runs in AJAX response, DOMContentLoaded already fired
+			(function() {
+				setTimeout(function() {
+					if (typeof Swiper !== 'undefined') {
+						var swiperEl = document.querySelector('#<?php echo esc_js( $widget_id ); ?> .swiper');
+						if (swiperEl && !swiperEl.swiper) {
+							new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
 								slidesPerView: 2,
-								spaceBetween: 16
-							}
+								spaceBetween: 16,
+								centeredSlides: false,
+								slidesPerGroup: 1,
+								loop: false,
+								pagination: {
+									el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
+									type: 'progressbar',
+									clickable: false
+								},
+								breakpoints: {
+									768: {
+										slidesPerView: 3,
+										spaceBetween: 16
+									},
+									1024: {
+										slidesPerView: 2,
+										spaceBetween: 16
+									}
+								}
+							});
 						}
-					});
-				}
-			});
+					}
+				}, 100);
+			})();
 			</script>
 		</div>
 		<?php
@@ -947,33 +953,39 @@ class GHSales_Upsell {
 			</div>
 
 			<script>
-			// Initialize Swiper for special sales
-			document.addEventListener('DOMContentLoaded', function() {
-				if (typeof Swiper !== 'undefined') {
-					new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
-						slidesPerView: 2,
-						spaceBetween: 16,
-						centeredSlides: false,
-						slidesPerGroup: 1,
-						loop: false,
-						pagination: {
-							el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
-							type: 'progressbar',
-							clickable: false
-						},
-						breakpoints: {
-							768: {
-								slidesPerView: 3,
-								spaceBetween: 16
-							},
-							1024: {
+			// Initialize Swiper for special sales (AJAX-loaded content)
+			// Use setTimeout since this runs in AJAX response, DOMContentLoaded already fired
+			(function() {
+				setTimeout(function() {
+					if (typeof Swiper !== 'undefined') {
+						var swiperEl = document.querySelector('#<?php echo esc_js( $widget_id ); ?> .swiper');
+						if (swiperEl && !swiperEl.swiper) {
+							new Swiper('#<?php echo esc_js( $widget_id ); ?> .swiper', {
 								slidesPerView: 2,
-								spaceBetween: 16
-							}
+								spaceBetween: 16,
+								centeredSlides: false,
+								slidesPerGroup: 1,
+								loop: false,
+								pagination: {
+									el: '#<?php echo esc_js( $widget_id ); ?> .swiper-pagination',
+									type: 'progressbar',
+									clickable: false
+								},
+								breakpoints: {
+									768: {
+										slidesPerView: 3,
+										spaceBetween: 16
+									},
+									1024: {
+										slidesPerView: 2,
+										spaceBetween: 16
+									}
+								}
+							});
 						}
-					});
-				}
-			});
+					}
+				}, 100);
+			})();
 			</script>
 		</div>
 		<?php
