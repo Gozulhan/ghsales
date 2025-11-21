@@ -215,30 +215,44 @@ class GHSales_Color_Scheme {
 
 		?>
 <style id="ghsales-color-override">
-:root {
+/*
+ * GHSales Color Override - Sale Theme Active
+ * Overrides Elementor global colors during active sale events
+ */
+
+/* Target Elementor Kit container - this is where Elementor defines its colors */
+/* Using [class*="elementor-kit-"] to match any kit ID */
+[class*="elementor-kit-"] {
 	<?php
-	// Output ALL colors as Elementor global color variables
 	foreach ( $all_colors as $color_id => $color_hex ) :
 		$sanitized_id = sanitize_key( $color_id );
 		?>
-	/* <?php echo esc_html( ucfirst( $color_id ) ); ?> Color */
+	--e-global-color-<?php echo esc_attr( $sanitized_id ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
+	<?php endforeach; ?>
+}
+
+/* Also set on :root for non-Elementor elements */
+:root {
+	<?php
+	foreach ( $all_colors as $color_id => $color_hex ) :
+		$sanitized_id = sanitize_key( $color_id );
+		?>
 	--e-global-color-<?php echo esc_attr( $sanitized_id ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
 	--<?php echo esc_attr( $sanitized_id ); ?>-color: <?php echo esc_attr( $color_hex ); ?> !important;
 	--<?php echo esc_attr( $sanitized_id ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
 	<?php endforeach; ?>
 }
 
-/* High-specificity override for stubborn themes */
+/* Body level for maximum inheritance coverage */
 body {
 	<?php foreach ( $all_colors as $color_id => $color_hex ) : ?>
 	--<?php echo esc_attr( sanitize_key( $color_id ) ); ?>: <?php echo esc_attr( $color_hex ); ?> !important;
 	<?php endforeach; ?>
 }
 
-/* Additional compatibility for Elementor custom colors */
+/* Direct Elementor element overrides for stubborn cases */
 <?php
 foreach ( $all_colors as $color_id => $color_hex ) :
-	// Only add custom color overrides (not system colors to avoid duplication)
 	if ( ! in_array( $color_id, array( 'primary', 'secondary', 'accent', 'text' ), true ) ) :
 		?>
 .elementor-widget-heading .elementor-heading-title[class*="elementor-color-<?php echo esc_attr( sanitize_key( $color_id ) ); ?>"],
