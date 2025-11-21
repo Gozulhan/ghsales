@@ -24,7 +24,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php esc_html_e( 'Create New Color Scheme', 'ghsales' ); ?>
 	</button>
 
+	<button type="button" class="page-title-action" id="ghsales-clear-color-cache-btn" style="background: #f0f0f1; border-color: #c3c4c7;">
+		<?php esc_html_e( 'Clear Color Cache', 'ghsales' ); ?>
+	</button>
+
 	<hr class="wp-header-end">
+
+	<!-- Active Color Status -->
+	<?php
+	// Show current active color scheme status
+	$active_scheme = GHSales_Color_Scheme::get_current_active_scheme();
+	if ( $active_scheme ) :
+	?>
+	<div class="notice notice-success" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Active Color Scheme:', 'ghsales' ); ?></strong>
+			<?php echo esc_html( $active_scheme->scheme_name ); ?>
+			(<?php esc_html_e( 'Event:', 'ghsales' ); ?> <?php echo esc_html( $active_scheme->event_title ); ?>)
+			<br>
+			<small><?php esc_html_e( 'This color scheme is currently being applied to the frontend.', 'ghsales' ); ?></small>
+		</p>
+	</div>
+	<?php else : ?>
+	<div class="notice notice-warning" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'No Active Color Scheme', 'ghsales' ); ?></strong>
+			<br>
+			<small><?php esc_html_e( 'No sale event with a color scheme is currently active. Assign a color scheme to an active sale event.', 'ghsales' ); ?></small>
+		</p>
+	</div>
+	<?php endif; ?>
 
 	<div class="ghsales-schemes-grid">
 

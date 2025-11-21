@@ -75,6 +75,59 @@ class GHSales_Color_Scheme {
 
 		// Clear cache when color schemes are modified (admin actions)
 		add_action( 'ghsales_color_scheme_updated', array( __CLASS__, 'clear_cache' ) );
+
+		// Debug endpoint: add ?ghsales_debug=colors to any frontend URL to see status
+		add_action( 'wp_head', array( $instance, 'debug_output' ), 1 );
+
+		// Admin AJAX for cache clear
+		add_action( 'wp_ajax_ghsales_clear_color_cache', array( __CLASS__, 'ajax_clear_cache' ) );
+	}
+
+	/**
+	 * Debug output for color scheme status
+	 * Add ?ghsales_debug=colors to any frontend URL to see what's happening
+	 *
+	 * @return void
+	 */
+	public function debug_output() {
+		// Only show debug if query param is set and user is admin
+		if ( ! isset( $_GET['ghsales_debug'] ) || 'colors' !== $_GET['ghsales_debug'] ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		// Get cached value directly
+		$cached = get_transient( self::CACHE_KEY );
+		$fresh  = $this->query_active_color_scheme();
+
+		echo "<!-- GHSALES COLOR DEBUG\n";
+		echo "Cache status: " . ( false === $cached ? 'MISS (no cache)' : ( 'none' === $cached ? 'HIT (no active sale cached)' : 'HIT (scheme cached)' ) ) . "\n";
+		echo "Fresh query result: " . ( $fresh ? 'Found scheme ID ' . $fresh->id . ' (' . $fresh->scheme_name . ')' : 'No active sale with color scheme' ) . "\n";
+		if ( $fresh ) {
+			echo "Event: " . $fresh->event_title . " (ID: " . $fresh->event_id . ")\n";
+			echo "Colors JSON: " . ( ! empty( $fresh->colors_json ) ? 'Yes (' . strlen( $fresh->colors_json ) . ' chars)' : 'Empty' ) . "\n";
+			echo "Primary: " . $fresh->primary_color . "\n";
+		}
+		echo "-->\n";
+	}
+
+	/**
+	 * AJAX handler to clear color cache from admin
+	 *
+	 * @return void
+	 */
+	public static function ajax_clear_cache() {
+		check_ajax_referer( 'ghsales_color_schemes', 'nonce' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		self::clear_cache();
+		wp_send_json_success( array( 'message' => 'Color cache cleared successfully' ) );
 	}
 
 	/**

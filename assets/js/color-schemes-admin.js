@@ -78,6 +78,43 @@
 
 		// Pre-fill/Reset from Elementor button
 		$('#ghsales-prefill-elementor').on('click', handleResetToElementor);
+
+		// Clear color cache button
+		$('#ghsales-clear-color-cache-btn').on('click', handleClearCache);
+	}
+
+	/**
+	 * Handle clear color cache button click
+	 * Clears the transient cache for active color scheme
+	 */
+	function handleClearCache() {
+		var $btn = $('#ghsales-clear-color-cache-btn');
+		var originalText = $btn.text();
+
+		$btn.prop('disabled', true).text('Clearing...');
+
+		$.ajax({
+			url: ghsalesColorSchemes.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'ghsales_clear_color_cache',
+				nonce: ghsalesColorSchemes.nonce
+			},
+			success: function(response) {
+				if (response.success) {
+					alert('Color cache cleared! The page will refresh to show current status.');
+					location.reload();
+				} else {
+					alert('Error: ' + (response.data || 'Failed to clear cache'));
+				}
+			},
+			error: function() {
+				alert('Error: Could not connect to server');
+			},
+			complete: function() {
+				$btn.prop('disabled', false).text(originalText);
+			}
+		});
 	}
 
 	/**
