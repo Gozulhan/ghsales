@@ -109,7 +109,12 @@ class GHSales_Color_Scheme {
 		if ( $fresh ) {
 			echo "Event: " . $fresh->event_title . " (ID: " . $fresh->event_id . ")\n";
 			echo "Colors JSON: " . ( ! empty( $fresh->colors_json ) ? 'Yes (' . strlen( $fresh->colors_json ) . ' chars)' : 'Empty' ) . "\n";
-			echo "Primary: " . $fresh->primary_color . "\n";
+			echo "Legacy colors:\n";
+			echo "  primary_color: " . $fresh->primary_color . " (" . ( $this->validate_hex_color( $fresh->primary_color ) ? 'VALID' : 'INVALID' ) . ")\n";
+			echo "  secondary_color: " . $fresh->secondary_color . " (" . ( $this->validate_hex_color( $fresh->secondary_color ) ? 'VALID' : 'INVALID' ) . ")\n";
+			echo "  accent_color: " . $fresh->accent_color . " (" . ( $this->validate_hex_color( $fresh->accent_color ) ? 'VALID' : 'INVALID' ) . ")\n";
+			echo "  text_color: " . $fresh->text_color . " (" . ( $this->validate_hex_color( $fresh->text_color ) ? 'VALID' : 'INVALID' ) . ")\n";
+			echo "Validation: " . ( $this->validate_color_scheme( $fresh ) ? 'PASSED' : 'FAILED' ) . "\n";
 		}
 		echo "-->\n";
 	}
