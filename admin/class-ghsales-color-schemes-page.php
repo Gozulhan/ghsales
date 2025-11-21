@@ -287,6 +287,9 @@ class GHSales_Color_Schemes_Page {
 				wp_send_json_error( 'Failed to update color scheme' );
 			}
 
+			// Clear color cache so changes take effect immediately
+			do_action( 'ghsales_color_scheme_updated', $scheme_id );
+
 			wp_send_json_success( array(
 				'message'   => 'Color scheme updated successfully',
 				'scheme_id' => $scheme_id,
@@ -306,9 +309,14 @@ class GHSales_Color_Schemes_Page {
 				wp_send_json_error( 'Failed to create color scheme' );
 			}
 
+			$new_scheme_id = $wpdb->insert_id;
+
+			// Clear color cache so new scheme is available immediately
+			do_action( 'ghsales_color_scheme_updated', $new_scheme_id );
+
 			wp_send_json_success( array(
 				'message'   => 'Color scheme created successfully',
-				'scheme_id' => $wpdb->insert_id,
+				'scheme_id' => $new_scheme_id,
 			) );
 		}
 	}
